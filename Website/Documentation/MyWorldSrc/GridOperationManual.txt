@@ -1,0 +1,92 @@
+
+Welcome to MyWorld Grid Operations!
+
+Whip and the Grid services may be run in Windows or Ubuntu. Just requires the Grid services code to be compiled in Mono to run in Ubuntu.
+
+Region servers requires Windows server OS, Windows Web Server 2008 R1 with SP1 installed is good if you can get it. 
+ Its virtual key allows you to install any number of copies and register them. Practice is to get one VM with it set up and all the updates applied with .Net 4.61 and MySQL Connector 9.6.6, Visual C++ 20010, 20013 installed. 
+ Windows Server 2014, 2016 all work as well.
+ This should let you get MySQL Workbench to be installed. 
+ For a multiple virtual server installation: clone the VM for as many region servers as you want. 
+ Give each one a new Name and IP Address. An Internet connection is required as well as an internal network for 
+ inter-grid operations communication. Makes the grid more secured that way. No external communications to catch.
+
+This grid was set up to be a single server grid, contained in the C:\Grid folder. You may call the folder what you like, then update the desktop icons and grid batch files.
+All processes and information is placed there to run the grid.
+
+NOTE: regions will not start up until they have been defined in the website first! Use Grid Owner account to login and the Website Administration, Estate Manager program to define estates and regions in them. Use the Grid Manager to assign the regions to server ports. Then you can start them up and access them in world.
+
+***************
+Grid Startup:
+***************
+
+1. Make sure these are running in this order: 
+ MySQL server, Whip server, and the Grid services: User, Grid and Messaging.
+
+If Whip is running in Ubuntu:
+  Whip services commands:
+  Start WHIP: sudo service whip start
+  Stop WHIP: sudo service whip stop
+  Read WHIP log: journalctl -u whip.service
+
+2. Start up Grid services on the Grid Services VM in their order:
+ Grid Users #1,
+ Grid Server #2,
+ Grid Messaging #3
+
+If grid services are running in Ubuntu:
+ Starts all three services:
+ sudo service userserver start && sudo service messagingserver start && sudo service gridserver start
+
+3. Open the first region server:
+Grid start up uses the desktop icons which must be started in their numbered order.
+Grid Aperture #1.
+
+Then regions may be started once the grid services have been loaded and running.
+Region 1 port#,
+Region 2 port#. ...
+Ports not assigned to a region will not load or run. Leave them off if not assigned.
+If there are more region servers, repeat this process in each one.
+
+Additional regions may be created by creating a new region folder and naming it with the port number. 
+Say 9500 as the first region for this example.
+Check that the port is in the Firewall port range for the regions hosted.
+Copy the contents of one of the existing region folders to the new region folder. 
+Copy the Region.ini into the same folder, replacing prior copy if there was one.
+Update the two [Port] locations in it. Save the file.
+Add the region entry to the Update.bat file on the server.
+
+Copy a desk top region shortcut entry and edit it for the new region port number. 
+
+Add a region in the website using the Grid Owner account logon and use the Website Administration, Estate Management to create the new region in its estate. Then open the Grid Management to set the region entry for its Region server and port number. 
+
+Double Click the new region shortcut icon to start the region. Any problems with running would be in the configuration settings.
+
+***************
+Grid Shutdown:
+***************
+
+Open last Region server first and proceed through each to the first Region Server.
+My World Website control for shutdown and restarts are working. Console commands Quit or Shutdown also work.
+Optional type Ctrl Y, then answer the "terminate the batch file?" question with Y then it will close properly.
+NOTE: Grid regions may be stopped using the website Grid Management program.
+The grid services are closed after all the regions are shut down. 
+
+Open the Grid services VM:
+The grid services are closed after all the regions are shut down. Close in reverse order of start up.
+If grid services are running in Ubuntu, stops all three services:
+ sudo service gridserver stop && sudo service messagingserver stop && sudo service userserver stop
+
+Then stop the Whip and MySQL services.
+
+***************
+Grid Updates:
+***************
+Process the grid Halcyon updates from the https://github.com/InWorldz/halcyon/releases dowload page. 
+Compile the project on a 64 bit Linux or Windows platforms to create the installations for each OS. Use the FTP to upload them.
+Unzip to the appropriate folders for each OS.
+
+WINDOWS:
+Use the UpdateReg.bat <Halcyon source folder name> to update all regions in the server. Repeat for each region server.
+Linux Copy to the grid services folder. Restart the grid services.
+In each region server start up each region using desktop icons for all regions defined in the website.

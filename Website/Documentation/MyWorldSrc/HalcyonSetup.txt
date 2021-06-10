@@ -1,0 +1,33 @@
+
+Download current Halcyon version release from https://github.com/HalcyonGrid/halcyon/releases.
+Save the Zip for Windows installation. This is supposed to be the ready to run precompiled download.
+
+DownLoad Whip from https://github.com/HalcyonGrid/whip-server/releases.
+Save the Zip for Windows or tar for Ubuntu installation. This is supposed to be the ready to run precompiled download.
+
+Refer to the information in https://github.com/HalcyonGrid/halcyon/wiki/Configuration on the different archetexture requirements at the bottom of that page. 
+The instructions here are for the single server halcyon setup for a small grid.
+
+Create C:\Grid folder
+Open C:\Grid
+Create 10 folders named for the ports the regions will use. For a single server use 9500-9509. For a multiple server installation use pattern 95#0-95#9 where # is the region host number 1-9 where there may be up to 9 region host servers.
+So you wind up with a folder pattern:
+ 9500
+ 9501
+ 9502
+ ...
+Create Bin folder where the grid services will run.
+
+Process HalcyonGridSetup.txt to create grid configuration files. Copy the resulting files to the indicated locations.
+Save a copy of all the files in C:\Grid\GridConfigs as a backup in case the working copies get lost.
+
+Use UpdateBin.bat </Path/HalcyonVersion> to install Halcyon into the Bin folder. 
+ Where </Path/HalcyonVersion> is like C:\SoftwareInstalls\Halcyon.0.9.41
+
+Use UpdateReg.bat </Path/HalcyonVersion> same as you had done with UpdateBin.bat.
+
+Copy Region.ini to each region simulator folder updating the port number for each one.
+
+At is point the server is ready for the website to create regions and users. Initial accounts will not have any avatars or any supplies to outfit them. All of that will have to be created or loaded in from some free sources.
+
+As a Halcyon world owner, you have the option to join the Halcyon World Owners Association that meets in the https://discover.creomundos.com/ world and may join the Mundos Market which will allow access to that marketplace for your world content. We all make progress when we can workd together for our common goals! Contact Bob Curtice there for more information. 

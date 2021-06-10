@@ -1,0 +1,33 @@
+Last update 11/10/2019
+
+Setting up a Windows Server for the software options that may be used:
+Install for the uses you need:
+NOTE: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
+onclick downloads. They all have the same name, so if wanted to save each one, must rename with year.
+
+Region Host Server (basic level):
+.Net Framework 4.6.1 (for Halcyon Grid operation)
+Microsoft Visual C++ 2008 Redistibutable - x64 9.0.21022 (for Aperture)
+Microsoft Visual C++ 2010 Redistibutable - x64 10.0.30319 (for Whip)
+
+For Website Server:
+Filezilla Server (website FTP support)
+Google Chrome (site testing)
+hMailserver 5.6.6 (IM to eMail etc.)
+ Required .Net Framework 2/3 to be installed. (Win 2012 or later)
+MySQL Connector C 6.0.2 (for Hmailserver if using MySQL)
+IIS URL Rewrite Module 2
+MySQL Connector 6.10.6 (for websites)
+Programmer's Notepad
+
+If Using MySQL:
+Community Installer provides for selection of products and versions to install and any added libraries.
+
+Microsoft Visual C++ 2013 Redistibutable - x64 12.0.30501 (for MySQL 5.7.20)
+MySQL Server 5.7
+Microsoft Visual C++ 2015 Redistibutable (x64) 14.0.23026 (for MySQL Workbench)
+MySQL Workbench 6.3 CE
+
+Create C:\SoftwareInstalls. Place in it the Halcyon version folder to be installed.
+
+Proceed with HalcyonSetup.txt.

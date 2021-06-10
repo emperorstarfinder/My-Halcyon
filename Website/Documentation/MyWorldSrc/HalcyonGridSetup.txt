@@ -1,0 +1,951 @@
+
+Grid services and Regions are set up to use Region folders for the regions and each region gets its startup info from the grid website.
+That is identified in the Region.ini override for Halcyon.ini located in the C:\Grid folder.
+Region folder layout:
+ C:\Grid\
+  Bin - for Aperture for now. May become code source for all regions.
+  <port#> - For region specific data controls. Also has all the Halcyon code placed in each folder for now. Create folder for each port number the server will run; typically 10 for full regions.
+ Using the port numbers assigned to each region is done so the ports used can be easily seen and they dont change when regions get renamed or relocated in the grid. 
+
+ Update.bat is to update the Halcyon code in each of the region folders:
+  command: Update <halcyonversion>
+  Where the <halcyonversion> comes from the folder name of the Halcyon version to install in the X:\SharedData mapped drive folder. Only the newest and the most recent two halcyon versions are retained. The SharedData folder is on the Win DC host and accessed by Filezilla FTP control. It services all the Halcyon grids for one upload point of access.
+ Until alternative methods are setup for Halcyon, the source code must be compiled on another matching 64 bit processor for Windows .Net and Linux Mono editions to be updated in each of the Halcyon running VMs. Precompiled downloads now available at the Halcyon Grid github site.
+ 
+Configuration file locations:
+ The starting template config files needed for each grid are listed below. Some will be placed in the GridHost folder and most used in the Grid Services installation.
+ Halcyon.ini is to be placed in the region server C:\Grid folder and the grid services location folder.
+ The Region.ini is the template for each region to be set up, placed in its folder named by port number.
+ Aperture.ini is placed in each Region server in C:/Grid/Bin folder.
+
+ Replacement tags and files they are in:
+  Tag               Files                                              Comment
+  %RegionServerIP%  - Halcyon.ini                                      Replaced with region server's External IP.
+  %GridServerIP%    - MessagingServer_Config.xml                       Replaced with grid server's External IP.
+  %GridName%        - Halcyon.ini, UserServer_Config.xml               as in "IMA %GridName% Grid".
+  %GridNick%        - Halcyon.ini                                      Grid short name ie. MyWorld.
+  %DBLocalIP%       - Halcyon.ini, *_Config.xml                        MySQL Server internal IP address.
+  %GridDB%          - Halcyon.ini, *_Config.xml                        DB name for the grid database. No spaces. Ie. mydata
+  %DBUser%          - Halcyon.ini, *_Config.xml                        DB User name for grid access. NOT ROOT!
+  %DBPass%          - Halcyon.ini, *_Config.xml                        DB Connection string that identifies the DB user password.
+  %ServicesLocalIP% - Halcyon.ini, *_Config.xml                        Internal IP address for the grid services VM.
+
+  %WhipPass%        - Halcyon.ini, GridServer_Config.xml, aperture.cfg Whip service password ie: MyWhipPass
+  %WhipLocalIP%     - Halcyon.ini, GridServer_Config.xml, aperture.cfg whip internal IP ie: 10.0.0.20
+    Or both may be replaced at once. ie: %WhipPass%@%WhipLocalIP% to MyWhipPass@10.0.0.20
+
+  %WebsiteURL%      - Halcyon.ini, Region.ini, UserServer_Config.xml   Website name ie: %WebsiteURL% = http://www.MyWorld.com
+  %GridLogonURL%    - Halcyon.ini                                      login URL for the grid ie: %GridLogonURL% = http://Logon.MyWorld.com, %GridLogonURL%:8002 -> http://Logon.MyWorld.com:8002
+  %BankUserUUID%    - Halcyon.ini                                      Bank account UUID or set to nothing. Used only if Economy is set in the website is displayed there.
+  %RegIntIP%        - Region.ini                                       The region server Internal IP
+  %port%            - Region.ini                                       The region server Port for region connection.
+
+Region port numbers start at 9500 but must be unique port numbers even when on different region servers if the regions can be seen from a viewer or it causes the regions to blank out randomly.
+ 
+Each Windows region server must have the firewall opened for the actual ports used. ie.
+
+Halcyon DB creation utility:
+hc-database --init --type=core --host=localhost --schema=%GridDB% --user=root --password=<rootpass>
+Run this from the bin folder in a command prompt to create the grid database.
+
+Run the following in MySQL Workbench query to create the DB user and assign permissions.
+
+create user '%DBUser%'@'%' identified by '%DBPass%';
+grant Select, Insert, Update, Delete on %GridDB%.* to '%DBUser%'@'%';
+grant Select, Insert, Update, Delete on mysite.* to '%DBUser%'@'%';
+FLUSH PRIVILEGES;
+
+***************
+Region Server Firewall Ports - 
+***************
+FireWall: Name                Profile         Program                         Protocol Local Port
+          RegionTCPPorts      Private,Public  Any                             TCP      8000,9500-9509
+          RegionUDPPorts      Private,Public  Any                             UDP      9500-9509
+ Note: port for Aperture=8000.
+
+***************
+Firewall for the grid services must be set if running in Windows:
+***************
+Grid Services Ports - 
+FireWall: Name                Profile         Program                         Protocol Local Port
+          GridServicesTCP     Private         Any                             TCP      8006,8009
+          UserServer          Private,Public                                  TCP      8002
+
+***************
+Region Server Firewall Ports - if entire grid is running in one Windows Server:
+***************
+FireWall: Name                Profile         Program                         Protocol Local Port
+          RegionTCPPorts      Private,Public  Any                             TCP      8000,8002,9500-9509
+          RegionUDPPorts      Private,Public  Any                             UDP      9500-9509
+          GridServicesTCP     Private         Any                             TCP      8006,8009
+ Note: port for Aperture=8000.
+
+****************************************
+Recommendations:
+Document as above for each region server and the regions it hosts. 
+This documentation will save you much time and frustration in finding sources of problems with operation.
+Each region that is located next to any other region requires a unique port number assigned to it, 
+even if it is on a different server!
+I run a max of 10 regions of any type on one region server. 
+Performance for maximum number of users will vary depending on server abilities.
+
+Thus if a second region server was set up, its region port numbers would be like:
+Region1: 9510
+Region2: 9511
+Region3: 9512
+
+***************
+SetPorts4User.cmd - This file is used to set the region server grid ports for current server user. Execute file from command line.
+Contents like this for each port: NOTE: Created by MakeGrid.bat when used to set up region folders.
+***************
+netsh http add urlacl url=http://+:9500/ user=%USERNAME%
+
+***************
+Desktop Icon Setup:
+***************
+
+This documents how to set up desktop icons to use start up parms with a batch file to run a region.
+NOTE: Change path to match your installation!! Create a new shortcut on the desktop, put in the values for the properties you see in it.
+
+Region Icon Properties:
+Target: C:\Grid\Halcyon.bat --inimaster=..\Halcyon.ini --inifile=Region.ini
+Start in: C:\Grid\9500
+
+Target: C:\Grid\Halcyon.bat --inimaster=..\Halcyon.ini --inifile=Region.ini
+Start in: C:\Grid\9501
+
+Target: C:\Grid\Halcyon.bat --inimaster=..\Halcyon.ini --inifile=Region.ini
+Start in: C:\Grid\9502
+
+Target: C:\Grid\Halcyon.bat --inimaster=..\Halcyon.ini --inifile=Region.ini
+Start in: C:\Grid\9503
+
+Target: C:\Grid\Halcyon.bat --inimaster=..\Halcyon.ini --inifile=Region.ini
+Start in: C:\Grid\9504
+
+...
+
+The commandline parms provide the location of the Master Halcyon.ini file location, and the override ini file. 
+The Region.ini override file also sets where to read the region xml data.
+
+***************
+Halcyon.bat file contents:
+***************
+@Echo off
+:Halcyon Control Batch Program
+:loop
+Halcyon.exe %*
+@echo Error %errorlevel%
+
+:ErrorLevels 0=sim called restart, 1=Region Crashed, 63=Console Restart given, 64=Console shutdown
+if ERRORLEVEL 64 goto End
+goto loop
+
+:End
+Exit
+-------------------------
+
+***************
+This batch file is used to automate the process of updating each of the Halcyon folders in the server.
+Requires the compiled code to be placed in a commonly accessed mapped drive shared folder for all region servers to access.
+In this example that was mapped to drive X:.
+
+Update.Bat Contents:
+***************
+
+@Echo off
+if "%1" == "" goto Error
+
+: Upgrade regions in this server
+@Echo Processing GridHost folder.
+CD GridHost
+call :Update %1 
+@Echo Processing 9500 folder.
+CD 9500
+call :Update %1 
+@Echo Processing 9501 folder.
+CD 9501
+call :Update %1 
+@Echo Processing 9502 folder.
+CD 9502
+call :Update %1 
+@Echo Processing 9503 folder.
+CD 9503
+call :Update %1 
+@Echo Processing 9504 folder.
+CD 9504
+call :Update %1 
+@Echo Processing 9505 folder.
+CD 9505
+call :Update %1 
+@Echo Processing 9506 folder.
+CD 9506
+call :Update %1 
+@Echo Processing 9507 folder.
+CD 9507
+call :Update %1 
+@Echo Processing 9508 folder.
+CD 9508
+call :Update %1 
+@Echo Processing 9509 folder.
+CD 9509
+call :Update %1 
+@Echo Update Done!
+goto Done
+
+:Error
+@Echo Missing Halcyon version folder location parameter!
+Goto Done
+
+:Update
+if not exist HalcyonConfigs\nul MKDir HalcyonConfigs
+:Save region config files
+@Echo Save region config files...
+if exist aperture.cfg copy aperture.cfg HalcyonConfigs
+if exist Halcyon.ini copy Halcyon.ini HalcyonConfigs
+if exist Region.ini copy Region.ini HalcyonConfigs
+copy Halcyon.log HalcyonConfigs
+copy trustednetworks.txt HalcyonConfigs
+:Remove files
+@Echo Removing old files...
+Del *.* /q
+Del data\*.* /q
+Del Physics\*.* /q
+Del ScriptEngines\*.* /q
+Del Terrain\*.* /q
+:Load files
+@Echo copying new files...
+xcopy C:\%1\*.* /s
+copy HalcyonConfigs\*.*
+CD \Grid
+
+:End Update
+
+:Done
+
+----------------
+
+***************
+This file overrides the Halcyon.ini settings only for the region it applies to.
+Default Region.ini content:
+***************
+
+[Startup]
+
+    ; Determine where to load the region information from.
+    ; Defaults to "filesystem" if this setting isn't present
+    ; Options: webserver - web server url for region xml data. regionload_webserver_url must be set up.
+    ;          filesystem - local path to Regions folder for region xml files to load.
+    ;                       regionload_regionsdir may be set up.
+    region_info_source = "webserver"
+
+    ; specified path to Region xml files when region_info_source = "filesystem".
+    ; default is "Regions" indicating the folder where the region xml files are.
+    ; May be set to an alternate path to load regions. (May be specified in an overide ini file)
+    ;regionload_regionsdir = "Regions"
+    
+    ; URL to web service to get the region xml data. Any selector can be sent to the service to indicate what is to be returned.
+    regionload_webserver_url = "%WebsiteURL%/Regxml.aspx?Region=%RegIntIP%&Port=[Port]"
+
+[Network]
+    http_listener_port = [Port]      ; Set to region port
+
+---------------
+
+***************
+aperture.cfg
+***************
+http_listen_port = 8000
+caps_token = 2960079
+whip_url = whip://%WhipPass%@%WhipLocalIP%:32700
+debug = 0
+
+---------------
+
+***************
+UserServer_Config.xml
+***************
+<Root>
+  <Config default_startup_message="Welcome to %GridName%!" 
+  default_grid_server="http://%ServicesLocalIP%:8009" 
+  grid_send_key="12charKeyCod" 
+  grid_recv_key="12charKeyCod" 
+  default_inventory_server="http://%DBLocalIP%/" 
+  default_authentication_server="http://%ServicesLocalIP%:8002" 
+  library_location=".\inventory\Libraries.xml" 
+  database_provider="OpenSim.Data.MySQL.dll" 
+  database_connect="Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%" 
+  http_port="8002" 
+  http_ssl="false" 
+  default_X="1000" 
+  default_Y="1000" 
+  enable_llsd_login="True" 
+  enable_hg_login="false" 
+  default_loginLevel="0" 
+  map_server_uri="%WebsiteURL%/map.aspx" 
+  profile_server_uri="" 
+  library_name="World Library" 
+  currency_symbol="No$" 
+  ssl_private_certificate="" 
+  ssl_public_certificate="" />
+</Root>
+---------------
+
+***************
+GridServer_Config.xml
+***************
+<Root>
+  <Config 
+  default_asset_server="whip://%WhipPass%@%WhipLocalIP%:32700" 
+  asset_send_key="12charKeyCod" 
+  asset_recv_key="12charKeyCod" 
+  default_user_server="http://%ServicesLocalIP%:8002" 
+  user_send_key="12charKeyCod" 
+  user_recv_key="12charKeyCod" 
+  sim_send_key="12charKeyCod" 
+  sim_recv_key="12charKeyCod" 
+  database_provider="OpenSim.Data.MySQL.dll" 
+  http_port="8009" 
+  allow_forceful_banlines="TRUE" 
+  allow_region_registration="True" 
+  database_connect="Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%" 
+  ssl_public_certificate="" />
+</Root>
+---------------
+
+***************
+MessagingServer_Config.xml
+***************
+<Root>
+  <Config 
+  default_user_server="http://%ServicesLocalIP%:8002" 
+  user_send_key="12charKeyCod" 
+  user_recv_key="12charKeyCod" 
+  default_grid_server="http://%ServicesLocalIP%:8009" 
+  grid_send_key="12charKeyCod" 
+  grid_recv_key="12charKeyCod" 
+  database_connect="Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%" 
+  database_provider="OpenSim.Data.MySQL.dll" 
+  region_comms_provider="OpenSim.Region.Communications.OGS1.dll" 
+  http_port="8006" 
+  http_ssl="False" 
+  published_ip="%GridServerIP%" 
+  ssl_public_certificate="" />
+</Root>
+---------------
+
+***************
+trustednetworks.txt
+This file is used by the grid services and the region instances to identify who they may accept information from.
+<yourIPPattern> = your IP address first three sets. ie. 255.255.231. The 10.0. is to identify the internal network IP pattern.
+***************
+127.0.0.1
+10.0.0.
+%RegionServerIP% - edit!
+
+---------------
+
+***************
+Halcyon.ini (also see the Halcyon.ini in the repository wiki)
+This is required for the grid services (separately) and the Region servers in the C:\Grid folder. (Whatever you may have named the folder.)
+Each region server requires it to be setup with the IP Address in the Networking Section.
+***************
+[Inventory]
+    ; Inventory process detects whip or cassadra installations.
+    inventory_plugin = "Halcyon.Data.Inventory.MySQL.dll"
+    inventory_cluster = "local"
+    legacy_inventory_source = "Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%; password=%DBPass%;"
+    migration_active = true
+
+[SimulatorFeatures]
+    ; Per-simulator external services and features. They don't have to be unique per simulator, but they can be.
+    ; If you are looking for the web-based profile server URI,
+    ;  profile_server_uri, please edit the UserServer_Config.xml file.
+
+    ; Server that hosts the map tiles.
+    ; Grid-wide setting held in the UserServer_Config.xml file.
+    MapImageServerURI = "%WebsiteURL%/map.aspx"
+    ; Server that hosts the pages used for the search server.
+    SearchServerURI = "" ;"http://255.255.255.255:9000/"
+    ; Are mesh-based objects allowed on this region?
+    MeshEnabled = true
+    PhysicsMaterialsEnabled = true
+
+[Mesh]
+    AllowMeshUpload = true
+
+[VivoxVoice]
+    ; NOTE: This requires contacting Vivox and putting in an application with them.
+    ; ## Apply for Vivox at http://support.vivox.com/opensim/ for your free account. See listed terms there.
+    enabled = true
+    ; vivox voice server
+    vivox_server = www.osp.vivox.com
+    ; vivox SIP URI
+    vivox_sip_uri = osp.vivox.com
+    ; vivox admin user name
+    vivox_admin_user = 
+    ; vivox admin password
+    vivox_admin_password = 
+
+[Startup]
+    ; Set this to true if you want to log crashes to disk
+    ; this can be useful when submitting bug reports.
+    save_crashes = true
+
+    ; Directory to save crashes to if above is enabled
+    ; (eg default is /opensimdir/crashes/*.txt or C:\opensim\crashes\*.txt)
+    crash_dir = "crashes"
+
+    ; Path for where to create a PID file. Default is to not create one.
+    ; PIDFile = "/tmp/my.pid"
+
+    ; Http proxy support for llHTTPRequest and dynamic texture loading
+    ; Set HttpProxy to the URL for your proxy server if you would like
+    ; to proxy llHTTPRequests through a firewall
+    ; HttpProxy = "http://proxy.com"
+    ; Set HttpProxyExceptions to a list of regular expressions for
+    ; URLs that you don't want going through the proxy such as servers
+    ; inside your firewall, separate patterns with a ';'
+    ; HttpProxyExceptions = ".mydomain.com;localhost"
+
+    ; Set this to true if you are connecting your Halcyon regions to a grid
+    ; Set this to false if you are running Halcyon in standalone mode
+    gridmode = true
+
+    ; This specifies what form of control console the region will support.
+    ; Options are:
+    ; "local" - the default when Halcyon is running as a background process,
+    ;   this console is display-only without color.
+    ; "basic" - the default when Halcyon is run as a foreground process, this
+    ;   console has a full command line for administering and controlling
+    ;   various aspects of the region from the terminal window.
+    ; "rest" - a RESTful API configured in the [Network] section of this file.
+    ;   Swagger specification and more can be found in the doc folder of the
+    ;   source code tree.
+    ;console = "basic"
+
+    ; Path to a text file that contains single-line commands as they would be
+    ;  entered on the Halcyon console.
+    ; If you have a series of commands you need to execute at startup or on
+    ;  shutdown, these files are where to put them.
+    startup_console_commands_file = "startup_commands.txt"
+    shutdown_console_commands_file = "shutdown_commands.txt"
+
+    ; To run a script every few minutes, set the script filename here
+    ; timer_Script = "filename"
+    ; timer_Script = "disabled"
+
+    ; ##
+    ; ## REGIONS NOTE: This section is overridden with the contents of Region.ini for each region.
+    ; ##
+
+    ; Where to load the region information from.
+    ; Options: webserver - web server url for region xml data. region_webserver_url must be set up.
+    ;          filesystem - local path to Regions folder for region xml files to load.
+    ;                       regionload_regionsdir may be set up.
+    ;region_info_source = "filesystem"
+    ; The URL of the source for the region(s) this instance of Halcyon is responsible for.
+    ; Note that the returned XML's root element must be a <Regions> tag
+    ;  containing <Root> tags containing <Config> tags that have the relevant
+    ;  attributes set.
+    ; For more information about the attributes, please see
+    ;  [the documentation we need to write].
+    ;regionload_webserver_url = "http://example.com:8087/path/file.ext"
+    ; specified path to Region xml files when region_info_source = "filesystem".
+    ; default is "Regions" indicating the foloder where the region xml files are.
+    ; May be set to an alternate path to load regions. (May be specified in an overide ini file)
+    ;regionload_regionsdir = "Regions"
+    ; NOTE: These are set in the Regions.ini override file in each instance folder by port number as the folder name.
+
+    ; Draw objects on maptile.   This step might take a long time if you've got a huge amount of
+    ; objects, so you can turn it off here if you'd like.
+    DrawPrimOnMapTile = true
+    ; Use terrain texture for maptiles if true, use shaded green if false
+    TextureOnMapTile = true
+
+    ; Maximum scale on any axis of any prim.
+    NonPhysicalPrimMax = 256
+    ; Maximum scale on any axis that a physical prim can be.
+    PhysicalPrimMax = 10
+    ; Enforce the above rules? (BUG: On a casual review these three rules
+    ;  don't seem to be consistently enforced.)
+    ClampPrimSize = false
+
+    ; ##
+    ; ## STORAGE
+    ; ##
+
+    ; *** Prim Storage - only leave one storage_plugin uncommented ***
+    ; "OpenSim.Data.Null.dll" stores nothing, effectively disabling persistence:
+    ; "OpenSim.Data.MySQL.dll" backup region prims to MySQL.
+    ;  To use MySQL storage, supply your own *_connection_string (this is only an example):
+    ;  note that the supplied account needs create privileges if you want it to auto-create needed tables.
+     storage_plugin="OpenSim.Data.MySQL.dll"
+    ; Used for the estate_connection_string if such is not handled separately,
+    ;  and primarily for a lot of per-region information.
+     storage_connection_string="Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%";
+
+    ; Asset system in use
+    asset_database = "whip"
+
+    ; Backing up to the region datastore of changed objects, aka persistence,
+    ;  happens during regular sweeps. The following control that behavior to
+    ;  prevent frequently changing objects from heavily loading the region data store.
+    ; If both of these values are set to zero then persistence of all changed
+    ;  objects will happen on every sweep.
+
+    ; Objects will be considered for backup to persistent data storage in the
+    ;  next sweep when they have not changed for this number of seconds.
+    MinimumTimeBeforePersistenceConsidered = 60
+    ; Objects will always be considered for persistence in the next sweep if the
+    ;  first change occurred this number of seconds ago
+    MaximumTimeBeforePersistenceConsidered = 600
+
+    ; ##
+    ; ## PHYSICS
+    ; ##
+
+    ; If you would like to allow prims to be physical and move by physics with
+    ;  the physical checkbox in the client set this to true, which is also the
+    ;  default.
+    physical_prim = true
+
+    ; Choose one of the physics engines below
+    ;physics = basicphysics
+    physics = InWorldz.PhysxPhysics
+
+    ; ##
+    ; ## PERMISSIONS
+    ; ##
+
+    ; Choose one of the permissions modules below.
+    ;  Only the "DefaultPermissionsModule" exists at this time and is default.
+    permissionmodules = "DefaultPermissionsModule"
+
+    ; If set to false, then, in theory, the server never carries out permission checks (allowing anybody to copy
+    ; any item, etc.)  This may not yet be implemented uniformally.
+    ; If set to true, then all permissions checks are carried out
+    ; Default is false
+    serverside_object_permissions = true
+
+    ; Do you wish to have users that can bypass the permissions system?
+    allow_grid_gods = false
+
+    ; Do you have an aperture texture/mesh server set up?
+    ; For more information about aperture, see https://github.com/InWorldz/aperture
+    use_aperture_server = yes
+    ; Port to connect to on the aperture server. Aperture is assumed to be
+    ;  running on localhost.
+    aperture_server_port = 8000
+    ; Must match the caps_token stanza in aperture.cfg on the aperture server.
+    aperture_server_caps_token = 2960079
+
+    ; Connection string for the legacy MySQL user inventory system and too many
+    ;  other things as well...
+    core_connection_string = "Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%;"
+    ; Region Database connection string used for lookups from Places Search
+    ;  along with parcel lookup from Places Search. Note that the actual server
+    ;  Data Source part is automatically added based on the host_name column
+    ;  from the RdbHosts table as found on Cassandra or the
+    ;  Inventory/legacy_inventory_source server.
+    ;rdb_connection_template = "Data Source={0};Database=inworldz;User ID=root;Pooling=True;Min Pool Size=0;"
+
+[SMTP]
+    ; This has to do with scripting in the old process, not the actual email processing. 
+    ; Has been disabled.
+    enabled=false
+
+    ;enabled=true
+    ;internal_object_host=lsl.opensim.local
+    ;host_domain_header_from=localIP
+    ;SMTP_SERVER_HOSTNAME=localIP
+    ;SMTP_SERVER_PORT=25
+    ;SMTP_SERVER_LOGIN=foo
+    ;SMTP_SERVER_PASSWORD=bar
+
+    ; {{lslinbound_db_connect}}
+    ;inbound_storage_connection=""
+    ;enabled=true
+    ;internal_object_host=lsl.opensim.local
+    ;host_domain_header_from=smtp.domain.com
+    ;SMTP_SERVER_HOSTNAME=smtp.domain.com
+    ;SMTP_SERVER_PORT=25
+    ;SMTP_SERVER_LOGIN=Name@domain.com
+    ;SMTP_SERVER_PASSWORD=aPass
+
+[Communications]
+    ; Which inter-region communications module do you wish to use?
+    ; "RESTComms" (Allows communications between all regions.)
+    ; "LocalComms" (Limits all communications to only those regions running on the same Halcyon instance.)
+    ;InterregionComms = "LocalComms"
+    InterregionComms = "RESTComms"
+
+[Network]
+    ; This is the block used to configure a region that is going to connect to
+    ;  a grid, aka when gridmode = true
+
+    ;http_listener_port = 9500      ; Set to region port overridden in Region.ini.
+    default_location_x = 1000
+    default_location_y = 1000
+    ; This is set for each server in the Region.ini as an override. Domain name or IP.
+    hostname = %RegionServerIP%
+
+    ; ssl config: Experimental!  The auto https config only really works definately on windows XP now
+    ; you need a Cert Request/Signed pair installed in the MY store with the CN specified below
+    ; you can use https on other platforms, but you'll need to configure the httpapi yourself for now
+    http_listener_ssl = false ; Also create a SSL server
+    http_listener_cn = "localhost" ; Use the cert with the common name
+    http_listener_sslport = 9001 ; Use this port for SSL connections
+    http_listener_ssl_cert = "" ; Currently unused, but will be used for OSHttpServer
+
+    ; The URL and access keys for the grid server: OpenSim.Grid.GridServer.exe
+    grid_server_url = "http://%ServicesLocalIP%:8009"
+    grid_send_key = "12charKeyCod"
+    grid_recv_key = "12charKeyCod"
+
+    ; The URL and access keys for the user server: OpenSim.Grid.UserServer.exe
+    user_server_url = "http://%ServicesLocalIP%:8002"
+    user_send_key = "12charKeyCod"
+    user_recv_key = "12charKeyCod"
+
+    ; The URL for the asset server, usually a WHIP server.
+    ;  See https://github.com/InWorldz/whip-server
+    asset_server_url = "whip://%WhipPass%@%WhipLocalIP%:32700"
+
+    ; The MessagingServer is a companion of the UserServer. It uses
+    ; user_send_key and user_recv_key, too
+    messaging_server_url = "http://%ServicesLocalIP%:8006"
+
+    ; What is reported as the "X-Secondlife-Shard"
+    ; Defaults to the user server url if not set
+    ; The old default is "OpenSim", set here for compatibility
+    shard = "HalcyonHome"
+
+    ; What is reported as the "User-Agent" when using llHTTPRequest
+    ; Defaults to not sent if not set here. See the notes section in the wiki at
+    ; http://wiki.secondlife.com/wiki/LlHTTPRequest for comments on adding
+    ; " (Mozilla Compatible)" to the text where there are problems with a web server
+    ;user_agent = "Halcyon LSL (Mozilla Compatible)"
+
+    ; Path to public key for verifying JWTs used for remote administration tools.
+    ; The default is empty, though a common value is "./server.crt" as is
+    ; documented in "doc/JWT Authentication/CreatingSelfSignedCert.txt"
+    ;SSLCertFile = ""
+
+[HttpRequest]
+    ; these entries provide port and IP blocking / black lists to prevent scripts from accessing the region servers and 
+    ; using that to make region changes that only the SysAdmin is to access. Like changing another user's password!
+
+    ;HostBlacklist = "250.120.220.15,20.0.0.*,google.com"
+    HostBlacklist = "%RegionServerIP%, 10.0.*"
+    ; For each region port in this region server!
+    ;PortBlacklist = "8010,8020"
+    PortBlacklist = "9500,9501,9502,9503,9504,9505,9506,9507,9508,9509"
+    ;HostnameAndPortBlacklist = "192.168.1.*:80,yahoo.com:1234"
+ 
+[Chat]
+    ; Controls whether the chat module is enabled.  Default is true.
+    enabled = true;
+
+    ; Distance in meters that whispers should travel.  Default is 10m
+    whisper_distance = 10
+
+    ; Distance in meters that ordinary chat should travel.  Default is 30m
+    say_distance = 30
+
+    ; Distance in meters that shouts should travel.  Default is 100m
+    shout_distance = 100
+
+[Messaging]
+    ; Control which region module is used for instant messaging.
+    ; Default is InstantMessageModule (this is the name of the core IM module as well as the setting)
+    InstantMessageModule = InstantMessageModule
+    MessageTransferModule = MessageTransferModule
+    OfflineMessageModule = OfflineMessageModule
+    OfflineMessageURL = %WebsiteURL%/offline.aspx
+    MuteListModule = MuteListModule
+    MuteListURL = %WebsiteURL%/mute.aspx
+
+[Sun]
+    ; number of wall clock hours for an simulated day.  24.0 would mean realtime
+    day_length = 4
+    ; Year length in days
+    year_length = 60
+    ; Day to Night Ratio
+    day_night_offset = 0.45
+    ; send a Sun update every update_interval # of frames.  A lower number will
+    ; make for smoother sun transition at the cost of network
+    update_interval = 100
+
+[Wind]
+    ; Enables the wind module.  Default is true
+    enabled = true
+
+    ; How often should wind be updated, as a function of world frames.  Approximately 50 frames a second
+    wind_update_rate = 30
+
+    ; The Default Wind Plugin to load
+    wind_plugin = ZephyrWind
+
+    ; These settings are specific to the ConfigurableWind plugin
+    ; To use ConfigurableWind as the default, simply change wind_plugin to ConfigurableWind and uncomment the following.
+    ; avg_strength  = 5.0
+    ; avg_direction = 0.0
+    ; var_strength  = 0.0
+    ; var_direction = 0.0
+    ; rate_change   = 1.0
+
+    ; This setting is specific to the SimpleRandomWind plugin
+    ; Adjusts wind strength. 0.0 = no wind, 1.0 = normal wind.  Default is 1.0
+    strength = 4.0
+
+[Cloud]
+    ; Enable this to generate classic particle clouds above the sim.
+    ; default is disabled - turn it on here
+    enabled = true
+
+    ; Density of cloud cover 0.0 to 1.0 Defult 0.5
+    density = 0.5
+
+    ; update interval for the cloud cover data returned by llCloud().
+    ; default is 1000
+    cloud_update_rate = 1000
+
+[Economy]
+    ; These economy values get used in the BetaGridLikeMoneyModule.  - This module is for demonstration only -
+    ; In grid mode, use this currency XMLRPC server.  Leave blank for normal functionality
+    CurrencyServer = ""
+    ;"%WebsiteURL%/currency.aspx"
+
+    ; Set the currency Symbol override default is "I'z$"
+    CurrencySymbol = "No$"
+
+    ; Economy specific MySQL DB Connection string. May point to a different DB than the grid DB.
+    EconomyConnString = "Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%;"
+
+    ; In grid mode, this is the land XMLRPC server. Leave blank for normal functionality
+    ; This points to only the path for LandTool.php which is hard coded in the viewer. 
+    ; To use a different page, it has to have a URL rewrite in IIS set up. This is combined with the 
+    ; [GridInfo] Economy path entry. 6/10/2016
+    LandServer = "LandTool.aspx"
+
+    ; 45000 is the highest value that the sim could possibly report because of protocol constraints
+    ObjectCapacity = 30000
+
+    ; Money Unit fee to upload textures, animations etc
+    PriceUpload = 0
+
+    ; Money Unit fee to create groups
+    PriceGroupCreate = 0
+
+    ; This is the account Money goes to for fees.  Remember, economy requires that money circulates somewhere... even if it's an upload fee
+    CurrencyAccount = %BankUserUUID%
+
+    ; This is the type of user that will pay fees.
+    ; Set this to 2 for users, estate managers and Estate Owners
+    ; Set this to 1 for Users and Estate Managers
+    ; Set this to 0 for Users only.
+    ; -1 disables
+    UserLevelPaysFees = 0
+
+    ; Amount to give to user as a stipend
+    UserStipend = 0
+
+    ; When a user gets low on money units and logs off, then logs back on, issue a new stipend if they have less money units then this
+    ; amount. Be aware that the account money isn't stored anywhere so users will get a stipend if you restart the simulator
+    IssueStipendWhenClientIsBelowAmount = 0
+
+    ; If this is true, the simulator will remember account balances until the simulator is shutdown or restarted.
+    KeepMoneyAcrossLogins = true
+
+    ; We don't really know what the rest of these values do.  These get sent to the client
+    ; These taken from Agni at a Public Telehub.  Change at your own risk.
+    ;ObjectCount = 0
+    ;PriceEnergyUnit = 100
+    ;PriceObjectClaim = 10
+    ;PricePublicObjectDecay = 4
+    ;PricePublicObjectDelete = 4
+    ;PriceParcelClaim = 1
+    ;PriceParcelClaimFactor = 1
+
+    ;PriceRentLight = 5
+    ;TeleportMinPrice = 2
+    ;TeleportPriceExponent = 2
+    ;EnergyEfficiency = 1
+    ;PriceObjectRent = 1
+    ;PriceObjectScaleFactor = 10
+    ;PriceParcelRent = 1
+
+[GridInfo]
+    ; These settings are used to return information on a get_grid_info call.
+    ; Client launcher scripts and third-party clients make use of this to
+    ; autoconfigure the client and to provide a nice user experience. If you
+    ; want to facilitate that, you should configure the settings here according
+    ; to your grid or standalone setup.
+    ;
+    ; See http://opensimulator.org/wiki/GridInfo
+
+    ; uri: for grid this is the user server URI
+    login = %GridLogonURL%:8002
+
+    ; long grid name: the long name of your grid
+    gridname = "%GridName%"
+
+    ; short grid name: the short name of your grid
+    gridnick = "%GridNick%"
+
+    ; login page: optional: if it exists it will be used to tell the client to use
+    ; this as splash page
+    welcome = %WebsiteURL%/Viewer.aspx
+
+    ; helper uri: optional: if it exists if will be used to tell the client to use
+    ; this for all economy related things
+    ;economy = http://192.168.147.100:9000/
+    ; Sets the path for the currency.php and landtool.php pages.
+    economy = %WebsiteURL%/
+
+    ; web page of grid: optional: page providing further information about your grid
+    about = %WebsiteURL%/Default.aspx
+
+    ; account creation: optional: page providing further information about obtaining
+    ; a user account on your grid
+    register = %WebsiteURL%/Register.aspx
+
+    ; help: optional: page providing further assistance for users of your grid
+    help = %WebsiteURL%/FAQ.aspx
+
+    ; password help: optional: page providing password assistance for users of your grid
+    password = %WebsiteURL%/ResetPass.aspx
+    
+    ; Base URL to a map display and teleport link provider.
+    ; This gets automatically appended with the region name and the X, Y, and Z
+    ; integer values of the location of interest, separated by "/" like a path.
+    ; EG: http://places.inworldz.com/IDI/128/128/4096
+    ; MUST end with a forward slash.
+    slurl_base = "%GridLogonURL%/"
+
+[Trees]
+    ; Enable this to allow the tree module to manage your sim trees, including growing, reproducing and dying
+    ; default is false
+    active_trees = false
+
+    ; Density of tree population
+    tree_density = 1000.0
+
+[Groups]
+    Enabled = true
+
+    ; This is the current groups stub in Region.CoreModules.Avatar.Groups
+    ;Module  = Default
+
+    ; The XmlRpcGroups implementation can be used against the publically available service
+    ; that I have made available for testing.  Your group data is not guarenteed safe
+    ; or available if you use this service, but it's available now and seems to work.
+    ; The PHP code for the service is available for you to deploy to your own server.
+    ;
+    Module  = FlexiGroups
+    Provider = Native
+    NativeProviderDBType = MySQL
+    NativeProviderConnString = "Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%;"
+
+    ; This makes the XmlRpcGroups modules very chatty on the console.
+    XmlRpcDebugEnabled = false
+
+[Profile]
+    ProfileConnString = "Data Source=%DBLocalIP%;Database=%GridDB%;User ID=%DBUser%;password=%DBPass%;"
+
+[Modules]
+    ; Choose one
+    AssetServices = "LocalAssetServicesConnector"
+    UserServices = "LocalUserServicesConnector"
+
+[InWorldz.PhysxPhysics]
+    use_visual_debugger = true
+    use_ccd = true
+
+[ChatLogModule]
+    Enabled = false
+    Debug = false
+    ;Backend = Cassandra12Backend
+    ;SeedNode1 = 127.0.0.1
+
+[GuestModule]
+    Enabled = false
+    GuestRegionName = ""
+
+[ChatFilterModule]
+    ; Allows the chat server to **** out words that are listed in
+    ;  wordfilterDictionary.txt
+    Enabled = false
+
+[AvatarRemoteCommands]
+    Enabled = false
+
+[WorldMap]
+    ; Activates the world map module if set to "WorldMap", left blank, or disabled/removed.
+    ;WorldMapModule = "WorldMap"
+
+    ; Specifies the location to write the map tile to when updated. The optional
+    ;  values {X} and {Y} are replaced by the x and y coordinates, respectively,
+    ;  of the region.
+    ; This is a good tool to feed map changes to an image processor to feed a
+    ;  web server for the world map tiles.
+    ; If blank or removed no file will be written.
+    ;RegionMapTileExportFilename = "somepath/map-1-{X}-{Y}-objects.jpg"
+
+    ; Draw objects on maptile.   This step might take a long time if you've got a huge amount of
+    ; objects, so you can turn it off here if you'd like. Default is true.
+    ;DrawPrimOnMapTile = true
+
+    ; Use terrain texture for maptiles if true, use shaded green if false. Default is false.
+    ;TextureOnMapTile = false
+
+    ; The minimum amount of time in seconds required to pass before the next automatic write of
+    ;  a map tile file to the server.  Keeps the file from being constantly written to in busy
+    ;  situations.  Limited to 60 seconds or longer to help prevent resource exhaustion and to
+    ;  keep CPU usage down.
+    ; Default is 3600 seconds, which is one hour.
+    ;MinimumTaintedMapTileWaitTime = 3600
+
+    ; Used to make sure the map tile file gets updated after a maximum amount of time, in
+    ;  seconds, if it has been changed.  Useful if MinimumTaintedMapTileWaitTime is non-zero as
+    ;  it makes sure that if the tile has been changed, but the minimum wait time hadn't been
+    ;  met during those changes, that the file actually gets written.  A time of 0 seconds means
+    ;  that this is disabled.  Automatically disabled if RegionMapTileExportFilename is not set.
+    ; Default is 0 seconds.
+    MaximumTaintedMapTileWaitTime = 86400 ; 86400 seconds = 24 hours.
+
+[InWorldz.Data.Assets.Stratus]
+    ; cloudfiles and cloud assets support
+    Enabled = true
+    CFSupport = false
+    LegacySupport = true
+    WhipURL = "whip://%WhipPass%@%WhipLocalIP%:32700"
+    WriteTarget = "whip"
+
+***************
+defaultlogins.txt - used by grid services to set default login landing spots if it exists. Set to regionname for the landing points to be used.
+Where <regname> =  the region name.
+Example:
+***************
+<regname>/128/127/21
+<regname>/128/128/21
+<regname>/128/129/21
+
+***************
+defaultregions.txt - This defines where someone without a home will land on logon.
+Where <regname> =  the region name.
+Example:
+***************
+<regname>/128/127/21
+<regname>/128/128/21
+<regname>/128/129/21
+
+*********************************
+Once website is operational:
+*********************************
+
+Use website user account: Grid Owner to access Website Administration, Grid Management to create Regions uing Estate Mananagement.
+Then use the Grid Manager to set region server IP and ports.
+
+See the GridOperationManual.txt file grid startup and shutdown process.
