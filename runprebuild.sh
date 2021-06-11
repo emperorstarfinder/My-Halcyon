@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cp lib/* bin/
+sudo cp lib/* bin/
