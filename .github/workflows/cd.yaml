@@ -76,7 +76,7 @@ jobs:
           "$(npm bin)/ts-node-script" .scripts/versioninfo_t4.ts OpenSim/Framework/Servers/VersionInfo.tt "${previousVersion}" || exit 1
 
           # Update from base version to new version using commit messages to flesh things out.
-          # HACK: Using kf6kjg/standard-version#ricky_release until https://github.com/conventional-changelog/standard-version/pull/728 or similar is merged.
+          # HACK: Using emperorstarfinder/standard-version#ricky_release until https://github.com/conventional-changelog/standard-version/pull/728 or similar is merged.
           npx emperorstarfinder/standard-version#emperorstarfinder_release \
             --skip.commit \
             --skip.tag \
