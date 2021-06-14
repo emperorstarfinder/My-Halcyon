@@ -26,20 +26,20 @@
  */
 
 using System;
-using System.Threading;
 using System.Collections.Generic;
-using System.Reflection;
-using OpenMetaverse;
+using System.Linq;
+using System.Reflections;
+using System.Threading;
+using System.Threading.Taxks;
 using log4net;
+using OpenMetaverse;
 using OpenSim.Framework;
 using OpenSim.Framework.Client;
 using OpenSim.Framework.Communications.Cache;
 using OpenSim.Framework.Geom;
 using OpenSim.Region.Framework.Interfaces;
-using OpenSim.Region.Physics.Manager;
 using OpenSim.Region.Framework.Scenes.Serialization;
-using System.Threading.Tasks;
-using System.Linq;
+using OpenSim.Region.Physics.Manager;
 
 namespace OpenSim.Region.Framework.Scenes
 {
@@ -87,7 +87,7 @@ namespace OpenSim.Region.Framework.Scenes
         ParcelInfoSent = 8,
         CanExitRegion = CompleteMovementReceived,   // don't care much about this region if leaving
         // FullyInRegion doesn't need parcel info to start sending updates, especially with 250ms delay
-        FullyInRegion = CompleteMovementReceived|FetchedProfile|InitialDataReady
+        FullyInRegion = CompleteMovementReceived | FetchedProfile | InitialDataReady
     }
 
     public class ScenePresence : EntityBase
@@ -111,7 +111,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         public static byte[] DefaultTexture;
 
-//        internal static RegionSettings s_RegionSettings;
+        //        internal static RegionSettings s_RegionSettings;
 
         public UUID currentParcelUUID = UUID.Zero;
         private AnimationSet m_animations = new AnimationSet();
@@ -151,7 +151,7 @@ namespace OpenSim.Region.Framework.Scenes
         private bool m_invulnerable = true;
 
         private Vector3 m_LastChildAgentUpdatePosition;
-//        private Vector3 m_lastChildAgentUpdateCamPosition;
+        //        private Vector3 m_lastChildAgentUpdateCamPosition;
         private Vector3 m_LastRegionPosition = new Vector3(128, 128, 128);
 
         private int m_perfMonMS;
@@ -170,11 +170,12 @@ namespace OpenSim.Region.Framework.Scenes
 
         private float m_speedModifier = 1.0f;
 
-        private Quaternion m_bodyRot= Quaternion.Identity;
+        private Quaternion m_bodyRot = Quaternion.Identity;
 
         public override Quaternion Rotation
         {
-            get {
+            get
+            {
                 lock (m_posInfo)
                 {
                     return m_bodyRot;
@@ -271,7 +272,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         protected enum Cardinals
         {
-            N=1,NE,E,SE,S,SW,W,NW
+            N = 1, NE, E, SE, S, SW, W, NW
         }
         /// <summary>
         /// Position at which a significant movement was made
@@ -470,7 +471,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         public SceneObjectPart SitTargetPart
         {
-            get { return m_sitTargetPart;  }
+            get { return m_sitTargetPart; }
         }
 
         // LinkNum 0 means avatar not seated
@@ -484,8 +485,8 @@ namespace OpenSim.Region.Framework.Scenes
         private bool m_avatarMovesWithPart = true; // i.e. legacy mode, NOT avatar-as-a-prim (SL) mode
         public bool AvatarMovesWithPart
         {
-            get { return m_avatarMovesWithPart;  }
-            set { m_avatarMovesWithPart = value;  }
+            get { return m_avatarMovesWithPart; }
+            set { m_avatarMovesWithPart = value; }
         }
 
         /// <value>
@@ -498,7 +499,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         public IClientCore ClientView
         {
-            get { return (IClientCore) m_controllingClient; }
+            get { return (IClientCore)m_controllingClient; }
         }
 
         public void ForceAgentPositionInRegion()
@@ -882,19 +883,19 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         public IEnumerable<ulong> KnownChildRegionHandles
         {
-            get 
+            get
             {
                 return m_remotePresences.GetEstablishedRemotePresenceList().Select(
-                    (AvatarRemotePresence p) => 
+                    (AvatarRemotePresence p) =>
                     {
-                        return p.PresenceInfo.RegionInfo.RegionHandle; 
+                        return p.PresenceInfo.RegionInfo.RegionHandle;
                     });
             }
         }
 
         public AnimationSet Animations
         {
-            get { return m_animations;  }
+            get { return m_animations; }
         }
 
         private bool m_mouseLook;
@@ -989,7 +990,7 @@ namespace OpenSim.Region.Framework.Scenes
             SetAgentPositionInfo(null, true, m_controllingClient.StartPos, null, Vector3.Zero, m_velocity);
 
             m_animPersistUntil = 0;
-            
+
             RegisterToEvents();
             SetDirectionVectors();
             SetDirectionFlags();
@@ -1120,14 +1121,14 @@ namespace OpenSim.Region.Framework.Scenes
             return vector;
         }
 
-#endregion
+        #endregion
 
         public uint GenerateClientFlags(UUID ObjectID)
         {
             return m_scene.Permissions.GenerateClientFlags(m_uuid, ObjectID, false);
         }
 
-#region Status Methods
+        #region Status Methods
 
         public SceneObjectPart GetSitTargetPart()
         {
@@ -1379,9 +1380,9 @@ namespace OpenSim.Region.Framework.Scenes
                 IgnoredControls = ScriptControlled.CONTROL_ZERO;
             }
 
-//            m_log.DebugFormat(
-//                 "[SCENE PRESENCE]: Downgrading root agent {0}, {1} to a child agent in {2}",
-//                 Name, UUID, m_scene.RegionInfo.RegionName);
+            //            m_log.DebugFormat(
+            //                 "[SCENE PRESENCE]: Downgrading root agent {0}, {1} to a child agent in {2}",
+            //                 Name, UUID, m_scene.RegionInfo.RegionName);
 
             // Don't zero out the velocity since this can cause problems when an avatar is making a region crossing,
             // depending on the exact timing.  This shouldn't matter anyway since child agent positions are not updated.
@@ -1414,7 +1415,7 @@ namespace OpenSim.Region.Framework.Scenes
         public void RemoveFromPhysicalScene()
         {
             DumpDebug("RemoveFromPhysicalScene", "n/a");
-            Velocity = Vector3.Zero; 
+            Velocity = Vector3.Zero;
             PhysicsActor pa = PhysicsActor;
             if (pa != null)
             {
@@ -1475,9 +1476,9 @@ namespace OpenSim.Region.Framework.Scenes
             SceneView.SendFullUpdateToAllClients();
         }
 
-#endregion
+        #endregion
 
-#region Event Handlers
+        #region Event Handlers
 
         /// <summary>
         /// Sets avatar height in the physics plugin
@@ -1521,7 +1522,7 @@ namespace OpenSim.Region.Framework.Scenes
             {
                 string elapsed = (elapsedMs / 1000.0).ToString("0.000");
                 string msg = elapsed + " seconds to confirm crossing complete for " + this.Name;
-                m_log.Info("[CROSSING]: "+msg);
+                m_log.Info("[CROSSING]: " + msg);
                 MessageToUserFromServer(msg);
             }
         }
@@ -1580,7 +1581,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_controllingClient.MoveAgentIntoRegion(m_regionInfo, AbsolutePosition, look);
                 this.AgentInRegion |= AgentInRegionFlags.CompleteMovementReceived;
 
-                Util.FireAndForget(delegate(object o)
+                Util.FireAndForget(delegate (object o)
                 {
                     int triggerOnCompletedMovementToNewRegionStart = Environment.TickCount;
 
@@ -1830,14 +1831,14 @@ namespace OpenSim.Region.Framework.Scenes
                 UpdateForDrawDistanceChange();
             }
 
-            if ((flags & (uint) AgentManager.ControlFlags.AGENT_CONTROL_STAND_UP) != 0)
+            if ((flags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_STAND_UP) != 0)
             {
                 StandUp(false, true);
                 bodyRotation = m_bodyRot;   // if standing, preserve the current rotation
                 update_rotation = true;
             }
 
-            m_mouseLook = (flags & (uint) AgentManager.ControlFlags.AGENT_CONTROL_MOUSELOOK) != 0;
+            m_mouseLook = (flags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_MOUSELOOK) != 0;
 
             m_leftButtonDown = (flags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_LBUTTON_DOWN) != 0;
 
@@ -1865,7 +1866,7 @@ namespace OpenSim.Region.Framework.Scenes
             if (m_autopilotMoving)
                 CheckAtSitTarget();
 
-            if ((flags & (uint) AgentManager.ControlFlags.AGENT_CONTROL_SIT_ON_GROUND) != 0)
+            if ((flags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_SIT_ON_GROUND) != 0)
             {
                 m_animPersistUntil = 0;    // abort any timed animation
                 TrySetMovementAnimation("SIT_GROUND_CONSTRAINED");
@@ -1917,7 +1918,7 @@ namespace OpenSim.Region.Framework.Scenes
                 }
                 else
                 {
-                
+
                     bool bAllowUpdateMoveToPosition = false;
                     bool bResetMoveToPosition = false;
 
@@ -1931,17 +1932,17 @@ namespace OpenSim.Region.Framework.Scenes
                         dirVectors = Dir_Vectors;
 
                     bool nudgeStarted = false;
-                    for (int i=0; i<Dir_Flags.Length; ++i)
+                    for (int i = 0; i < Dir_Flags.Length; ++i)
                     {
                         Dir_ControlFlags DCF = Dir_Flags[i];
 
-                        if ((flags & (uint) DCF) != 0)
+                        if ((flags & (uint)DCF) != 0)
                         {
                             bResetMoveToPosition = true;
                             DCFlagKeyPressed = true;
                             agent_control_v3 += dirVectors[i];
-                            
-                            if ((m_movementflag & (uint) DCF) == 0)
+
+                            if ((m_movementflag & (uint)DCF) == 0)
                             {
                                 m_movementflag += (uint)DCF & PrimaryMovements;   // This is an abomination.
                                 update_movementflag = true;
@@ -1978,9 +1979,9 @@ namespace OpenSim.Region.Framework.Scenes
                         }
                         else
                         {
-                            if ((m_movementflag & (uint) DCF) != 0)
+                            if ((m_movementflag & (uint)DCF) != 0)
                             {
-                                m_movementflag -= (uint) DCF & PrimaryMovements;  // This is an abomination.
+                                m_movementflag -= (uint)DCF & PrimaryMovements;  // This is an abomination.
                                 update_movementflag = true;
                                 if (!nudgeStarted) _nudgeStart = 0;
                             }
@@ -2100,7 +2101,7 @@ namespace OpenSim.Region.Framework.Scenes
                     physActor.SetAirBrakes = (m_AgentControlFlags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_STOP) != 0 && !IsInTransitOnPrim && !m_moveToPositionInProgress;
 
                 }
-                
+
                 // Cause the avatar to stop flying if it's colliding
                 // with something with the down arrow pressed.
 
@@ -2108,8 +2109,8 @@ namespace OpenSim.Region.Framework.Scenes
                 if (physActor != null && physActor.Flying && !m_forceFly)
                 {
                     // Are the landing controls requirements filled?
-                    bool controlland = (((flags & (uint) AgentManager.ControlFlags.AGENT_CONTROL_UP_NEG) != 0) ||
-                                        ((flags & (uint) AgentManager.ControlFlags.AGENT_CONTROL_NUDGE_UP_NEG) != 0));
+                    bool controlland = (((flags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_UP_NEG) != 0) ||
+                                        ((flags & (uint)AgentManager.ControlFlags.AGENT_CONTROL_NUDGE_UP_NEG) != 0));
 
                     // Are the collision requirements fulfilled?
                     bool colliding = (physActor.CollidingGround == true);
@@ -2136,7 +2137,7 @@ namespace OpenSim.Region.Framework.Scenes
                 else if (update_rotation)
                 {
                     //avatar is spinning with no other changes
-//                    m_log.WarnFormat("[SP]: HandleAgentUpdate: Sending terse update vel={0}",this.Velocity);
+                    //                    m_log.WarnFormat("[SP]: HandleAgentUpdate: Sending terse update vel={0}",this.Velocity);
                     SendTerseUpdateToAllClients();
                 }
             }
@@ -2163,20 +2164,20 @@ namespace OpenSim.Region.Framework.Scenes
 
             proxyObjectGroup = new SceneObjectGroup(UUID, Pos, Rotation, proxy, false);
             proxyObjectGroup.AttachToScene(m_scene, false);
-            
+
             // Commented out this code since it could never have executed, but might still be informative.
-//            if (proxyObjectGroup != null)
-//            {
-                proxyObjectGroup.SendGroupFullUpdate(PrimUpdateFlags.ForcedFullUpdate);
-                remote_client.SendSitResponse(proxyObjectGroup.UUID, Vector3.Zero, Quaternion.Identity, true, Vector3.Zero, Vector3.Zero, false);
-                m_scene.DeleteSceneObject(proxyObjectGroup, false);
-//            }
-//            else
-//            {
-//                m_autopilotMoving = false;
-//                m_autoPilotTarget = Vector3.Zero;
-//                ControllingClient.SendAlertMessage("Autopilot cancelled");
-//            }
+            //            if (proxyObjectGroup != null)
+            //            {
+            proxyObjectGroup.SendGroupFullUpdate(PrimUpdateFlags.ForcedFullUpdate);
+            remote_client.SendSitResponse(proxyObjectGroup.UUID, Vector3.Zero, Quaternion.Identity, true, Vector3.Zero, Vector3.Zero, false);
+            m_scene.DeleteSceneObject(proxyObjectGroup, false);
+            //            }
+            //            else
+            //            {
+            //                m_autopilotMoving = false;
+            //                m_autoPilotTarget = Vector3.Zero;
+            //                ControllingClient.SendAlertMessage("Autopilot cancelled");
+            //            }
         }
 
         public void DoMoveToPosition(Object sender, string method, List<String> args)
@@ -2247,24 +2248,24 @@ namespace OpenSim.Region.Framework.Scenes
                         SceneView.SendFullUpdateToAllClients();
                     }
                 }
-                    /*
-                else
-                {
-                    //ControllingClient.SendAlertMessage("Autopilot cancelled");
-                    //SendTerseUpdateToAllClients();
-                    //PrimitiveBaseShape proxy = PrimitiveBaseShape.Default;
-                    //proxy.PCode = (byte)PCode.ParticleSystem;
-                    ////uint nextUUID = m_scene.NextLocalId;
+                /*
+            else
+            {
+                //ControllingClient.SendAlertMessage("Autopilot cancelled");
+                //SendTerseUpdateToAllClients();
+                //PrimitiveBaseShape proxy = PrimitiveBaseShape.Default;
+                //proxy.PCode = (byte)PCode.ParticleSystem;
+                ////uint nextUUID = m_scene.NextLocalId;
 
-                    //proxyObjectGroup = new SceneObjectGroup(m_scene, m_scene.RegionInfo.RegionHandle, UUID, nextUUID, m_autoPilotTarget, Quaternion.Identity, proxy);
-                    //if (proxyObjectGroup != null)
-                    //{
-                        //proxyObjectGroup.SendGroupFullUpdate();
-                        //ControllingClient.SendSitResponse(UUID.Zero, m_autoPilotTarget, Quaternion.Identity, true, Vector3.Zero, Vector3.Zero, false);
-                        //m_scene.DeleteSceneObject(proxyObjectGroup);
-                    //}
-                }
-                */
+                //proxyObjectGroup = new SceneObjectGroup(m_scene, m_scene.RegionInfo.RegionHandle, UUID, nextUUID, m_autoPilotTarget, Quaternion.Identity, proxy);
+                //if (proxyObjectGroup != null)
+                //{
+                    //proxyObjectGroup.SendGroupFullUpdate();
+                    //ControllingClient.SendSitResponse(UUID.Zero, m_autoPilotTarget, Quaternion.Identity, true, Vector3.Zero, Vector3.Zero, false);
+                    //m_scene.DeleteSceneObject(proxyObjectGroup);
+                //}
+            }
+            */
                 m_autoPilotTarget = Vector3.Zero;
                 m_autopilotMoving = false;
             }
@@ -2503,11 +2504,11 @@ namespace OpenSim.Region.Framework.Scenes
             var allParts = targetPart.ParentGroup.GetParts();
             SceneObjectPart[] partArray = allParts.ToArray();
 
-            Array.Sort(partArray, delegate(SceneObjectPart p1, SceneObjectPart p2)
+            Array.Sort(partArray, delegate (SceneObjectPart p1, SceneObjectPart p2)
                        {
                            // we want the originally selected part first, then the rest in link order -- so make the selected part link num (-1)
-                           int linkNum1 = p1==targetPart ? -1 : p1.LinkNum;
-                           int linkNum2 = p2==targetPart ? -1 : p2.LinkNum;
+                           int linkNum1 = p1 == targetPart ? -1 : p1.LinkNum;
+                           int linkNum2 = p2 == targetPart ? -1 : p2.LinkNum;
                            return linkNum1 - linkNum2;
                        }
                 );
@@ -2608,9 +2609,9 @@ namespace OpenSim.Region.Framework.Scenes
                 {
                     // Make up a desired facing, relative to the child prim seated on.
                     // We'll use the prim rotation for now.
-//                    avSitPos += Vector3.Zero;         // could put the avatar on top of the prim
-//                    avSitRot *= Quaternion.Identity;  // could face the avatar to the side clicked on
-//                    vRot *= Quaternion.Identity;  // could face the avatar to the side clicked on
+                    //                    avSitPos += Vector3.Zero;         // could put the avatar on top of the prim
+                    //                    avSitRot *= Quaternion.Identity;  // could face the avatar to the side clicked on
+                    //                    vRot *= Quaternion.Identity;  // could face the avatar to the side clicked on
                 }
 
 #if false
@@ -2697,11 +2698,11 @@ namespace OpenSim.Region.Framework.Scenes
 
             SendSitResponse(remoteClient, targetID, offset);
         }
-        
+
         public void HandleAgentRequestSit(IClientAPI remoteClient, UUID agentID, UUID targetID, Vector3 offset, string sitAnimation)
         {
-//            m_log.InfoFormat("[SCENE PRESENCE]: HandleAgentRequestSit agent {0} at {1} requesing sit at {2} ", agentID.ToString(), m_pos.ToString(), offset.ToString());
-//            m_movementflag = 0;
+            //            m_log.InfoFormat("[SCENE PRESENCE]: HandleAgentRequestSit agent {0} at {1} requesing sit at {2} ", agentID.ToString(), m_pos.ToString(), offset.ToString());
+            //            m_movementflag = 0;
 
             StandUp(false, true);
 
@@ -2715,7 +2716,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
 
             //SceneObjectPart part = m_scene.GetSceneObjectPart(targetID);
-            SceneObjectPart part =  FindNextAvailableSitTarget(targetID);
+            SceneObjectPart part = FindNextAvailableSitTarget(targetID);
             if (part != null)
             {
                 m_requestedSitTargetID = part.LocalId;
@@ -2726,7 +2727,7 @@ namespace OpenSim.Region.Framework.Scenes
             {
                 m_log.Warn("[SCENE PRESENCE]: Sit requested on unknown object: " + targetID);
             }
-            
+
             SendSitResponse(remoteClient, targetID, offset);
         }
 
@@ -2779,13 +2780,13 @@ namespace OpenSim.Region.Framework.Scenes
             int rnditerations = 3;
             BinBVHAnimation anim = new BinBVHAnimation();
             List<string> parts = new List<string>();
-            parts.Add("mPelvis");parts.Add("mHead");parts.Add("mTorso");
-            parts.Add("mHipLeft");parts.Add("mHipRight");parts.Add("mHipLeft");parts.Add("mKneeLeft");
-            parts.Add("mKneeRight");parts.Add("mCollarLeft");parts.Add("mCollarRight");parts.Add("mNeck");
-            parts.Add("mElbowLeft");parts.Add("mElbowRight");parts.Add("mWristLeft");parts.Add("mWristRight");
-            parts.Add("mShoulderLeft");parts.Add("mShoulderRight");parts.Add("mAnkleLeft");parts.Add("mAnkleRight");
-            parts.Add("mEyeRight");parts.Add("mChest");parts.Add("mToeLeft");parts.Add("mToeRight");
-            parts.Add("mFootLeft");parts.Add("mFootRight");parts.Add("mEyeLeft");
+            parts.Add("mPelvis"); parts.Add("mHead"); parts.Add("mTorso");
+            parts.Add("mHipLeft"); parts.Add("mHipRight"); parts.Add("mHipLeft"); parts.Add("mKneeLeft");
+            parts.Add("mKneeRight"); parts.Add("mCollarLeft"); parts.Add("mCollarRight"); parts.Add("mNeck");
+            parts.Add("mElbowLeft"); parts.Add("mElbowRight"); parts.Add("mWristLeft"); parts.Add("mWristRight");
+            parts.Add("mShoulderLeft"); parts.Add("mShoulderRight"); parts.Add("mAnkleLeft"); parts.Add("mAnkleRight");
+            parts.Add("mEyeRight"); parts.Add("mChest"); parts.Add("mToeLeft"); parts.Add("mToeRight");
+            parts.Add("mFootLeft"); parts.Add("mFootRight"); parts.Add("mEyeLeft");
             anim.HandPose = 1;
             anim.InPoint = 0;
             anim.OutPoint = (rnditerations * .10f);
@@ -2809,12 +2810,12 @@ namespace OpenSim.Region.Framework.Scenes
                 for (int i = 0; i < rnditerations; i++)
                 {
                     anim.Joints[j].rotationkeys[i] = new binBVHJointKey();
-                    anim.Joints[j].rotationkeys[i].time = (i*.10f);
-                    anim.Joints[j].rotationkeys[i].key_element.X = ((float) rnd.NextDouble()*2 - 1);
-                    anim.Joints[j].rotationkeys[i].key_element.Y = ((float) rnd.NextDouble()*2 - 1);
-                    anim.Joints[j].rotationkeys[i].key_element.Z = ((float) rnd.NextDouble()*2 - 1);
+                    anim.Joints[j].rotationkeys[i].time = (i * .10f);
+                    anim.Joints[j].rotationkeys[i].key_element.X = ((float)rnd.NextDouble() * 2 - 1);
+                    anim.Joints[j].rotationkeys[i].key_element.Y = ((float)rnd.NextDouble() * 2 - 1);
+                    anim.Joints[j].rotationkeys[i].key_element.Z = ((float)rnd.NextDouble() * 2 - 1);
                     anim.Joints[j].positionkeys[i] = new binBVHJointKey();
-                    anim.Joints[j].positionkeys[i].time = (i*.10f);
+                    anim.Joints[j].positionkeys[i].time = (i * .10f);
                     anim.Joints[j].positionkeys[i].key_element.X = 0;
                     anim.Joints[j].positionkeys[i].key_element.Y = 0;
                     anim.Joints[j].positionkeys[i].key_element.Z = 0;
@@ -2859,7 +2860,7 @@ namespace OpenSim.Region.Framework.Scenes
 
             UUID animID = m_controllingClient.GetDefaultAnimation(name);
             if (animID == UUID.Zero)    // this is the important return case
-                return "Could not find animation '"+name+"'";
+                return "Could not find animation '" + name + "'";
 
             return AddAnimation(animID, objectID);
         }
@@ -2891,7 +2892,7 @@ namespace OpenSim.Region.Framework.Scenes
             UUID[] animIDs;
             int[] sequenceNums;
             UUID[] objectIDs;
-            m_animations.GetArrays( out animIDs, out sequenceNums, out objectIDs);
+            m_animations.GetArrays(out animIDs, out sequenceNums, out objectIDs);
             return animIDs;
         }
 
@@ -2912,7 +2913,7 @@ namespace OpenSim.Region.Framework.Scenes
         protected void TrySetMovementAnimation(string anim)
         {
             //m_log.DebugFormat("[SCENE PRESENCE]: Updating movement animation to {0}", anim);
-            
+
             if (!m_isChildAgent)
             {
                 // disregard duplicate updates
@@ -2920,7 +2921,7 @@ namespace OpenSim.Region.Framework.Scenes
                 {
                     if (anim == m_previousMovement)
                         return;
-//                    m_log.DebugFormat(">>>> Thread {0} [{1}] changing {2} --> {3}", Thread.CurrentThread.Name, Thread.CurrentThread.ManagedThreadId.ToString(), m_previousMovement, anim);
+                    //                    m_log.DebugFormat(">>>> Thread {0} [{1}] changing {2} --> {3}", Thread.CurrentThread.Name, Thread.CurrentThread.ManagedThreadId.ToString(), m_previousMovement, anim);
                     m_previousMovement = anim;
                     if (anim == "DEFAULT")
                         anim = (m_posInfo.Parent == null) ? "STAND" : "SIT";
@@ -2941,7 +2942,7 @@ namespace OpenSim.Region.Framework.Scenes
                             {
                                 if (m == null) // No script engine loaded
                                     continue;
-//                                m_log.DebugFormat(">>>> Thread {0} [{1}] sending changed({2})", Thread.CurrentThread.Name, Thread.CurrentThread.ManagedThreadId.ToString(), anim);
+                                //                                m_log.DebugFormat(">>>> Thread {0} [{1}] sending changed({2})", Thread.CurrentThread.Name, Thread.CurrentThread.ManagedThreadId.ToString(), anim);
                                 m.PostObjectEvent(grp.RootPart.LocalId, "changed", new Object[] { (int)Changed.ANIMATION }); // CHANGED_ANIMATION
                             }
                         }
@@ -2986,13 +2987,13 @@ namespace OpenSim.Region.Framework.Scenes
                         }
                         else
                             if ((m_movementflag & (uint)AgentManager.ControlFlags.AGENT_CONTROL_AT_NEG) + (m_movementflag & (uint)AgentManager.ControlFlags.AGENT_CONTROL_AT_POS) != 0)
-                            {
-                                return "CROUCHWALK";
-                            }
-                            else
-                            {
-                                return "CROUCH";
-                            }
+                        {
+                            return "CROUCHWALK";
+                        }
+                        else
+                        {
+                            return "CROUCH";
+                        }
                     }
                     else if (m_movementAnimation == "PREJUMP")
                     {
@@ -3001,25 +3002,25 @@ namespace OpenSim.Region.Framework.Scenes
                     }
                     else
                         if (pa.Flying)
-                        {
-                            // if (m_movementAnimation != "FLY") m_log.DebugFormat("[SCENE PRESENCE]: GetMovementAnimation: {0} --> FLY", m_movementAnimation);
-                            return "FLY";
-                        }
-                        else
+                    {
+                        // if (m_movementAnimation != "FLY") m_log.DebugFormat("[SCENE PRESENCE]: GetMovementAnimation: {0} --> FLY", m_movementAnimation);
+                        return "FLY";
+                    }
+                    else
                             if ((m_movementflag & (uint)AgentManager.ControlFlags.AGENT_CONTROL_UP_POS) != 0)
-                            {
-                                // if (m_movementAnimation != "JUMP") m_log.DebugFormat("[SCENE PRESENCE]: GetMovementAnimation: {0} --> JUMP", m_movementAnimation);
-                                return "JUMP";
-                            }
-                            else if (m_setAlwaysRun)
-                            {
-                                return "RUN";
-                            }
-                            else
-                            {
-                                // if (m_movementAnimation != "WALK") m_log.DebugFormat("[SCENE PRESENCE]: GetMovementAnimation: {0} --> WALK", m_movementAnimation);
-                                return "WALK";
-                            }
+                    {
+                        // if (m_movementAnimation != "JUMP") m_log.DebugFormat("[SCENE PRESENCE]: GetMovementAnimation: {0} --> JUMP", m_movementAnimation);
+                        return "JUMP";
+                    }
+                    else if (m_setAlwaysRun)
+                    {
+                        return "RUN";
+                    }
+                    else
+                    {
+                        // if (m_movementAnimation != "WALK") m_log.DebugFormat("[SCENE PRESENCE]: GetMovementAnimation: {0} --> WALK", m_movementAnimation);
+                        return "WALK";
+                    }
                 }
                 else
                 {
@@ -3194,7 +3195,7 @@ namespace OpenSim.Region.Framework.Scenes
 
             string movementAnimation = GetMovementAnimation();
             // if we ignore this calculated movementAnimation, we need to also clear m_animPersistUntil
-        
+
             if (movementAnimation == "FALLDOWN" && m_allowFalling == false)
             {    // don't update m_movementAnimation
                 movementAnimation = m_movementAnimation;    // save *current* anim
@@ -3266,9 +3267,9 @@ namespace OpenSim.Region.Framework.Scenes
             m_scene.StatsReporter.AddAgentTime(Environment.TickCount - m_perfMonMS);
         }
 
-#endregion
+        #endregion
 
-#region Overridden Methods
+        #region Overridden Methods
 
         public override void Update()
         {
@@ -3294,9 +3295,9 @@ namespace OpenSim.Region.Framework.Scenes
             }
         }
 
-#endregion
+        #endregion
 
-#region Update Client(s)
+        #region Update Client(s)
 
         /// <summary>
         /// Sends a location update to the client connected to this scenePresence
@@ -3478,7 +3479,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// Tell the client for this scene presence what items it should be wearing now
         /// </summary>
         public void SendWearables()
-        {   
+        {
             ControllingClient.SendWearables(m_appearance.GetWearables().ToArray(), m_appearance.Serial);
         }
 
@@ -3489,14 +3490,14 @@ namespace OpenSim.Region.Framework.Scenes
         {
             m_perfMonMS = Environment.TickCount;
 
-            m_scene.ForEachScenePresence(delegate(ScenePresence scenePresence)
+            m_scene.ForEachScenePresence(delegate (ScenePresence scenePresence)
                                          {
                                              if (scenePresence.UUID != UUID)
                                              {
                                                  SendAppearanceToOtherAgent(scenePresence);
                                              }
                                          });
-            
+
             m_scene.StatsReporter.AddAgentTime(Environment.TickCount - m_perfMonMS);
         }
 
@@ -3554,14 +3555,14 @@ namespace OpenSim.Region.Framework.Scenes
             if (m_appearance.AvatarHeight > 0)
                 SetHeight(m_appearance.AvatarHeight);
 
-            Dictionary<UUID, UUID> bakedTextures = new Dictionary<UUID,UUID>();
+            Dictionary<UUID, UUID> bakedTextures = new Dictionary<UUID, UUID>();
             foreach (WearableCache cache in cachedItems)
             {
                 //V2 changed to send the actual texture index, and not the baked texture index
                 int index = cache.TextureIndex >= 5 ? cache.TextureIndex :
                     (int)AppearanceManager.BakeTypeToAgentTextureIndex((BakeType)cache.TextureIndex);
 
-                if(m_appearance.Texture != null && m_appearance.Texture.FaceTextures[index] != null)
+                if (m_appearance.Texture != null && m_appearance.Texture.FaceTextures[index] != null)
                     bakedTextures.Add(cache.CacheID, m_appearance.Texture.FaceTextures[index].TextureID);
             }
 
@@ -3624,13 +3625,13 @@ namespace OpenSim.Region.Framework.Scenes
             // this should be sent when the initial data is also sent, which matches when culling is ready to send (IsFullyInRegion).
             if (!this.IsFullyInRegion)
             {
-//                m_log.WarnFormat("[SCENE PRESENCE]: NOT sending anim pack to {0}: avatar not yet in region.", this.Name);
+                //                m_log.WarnFormat("[SCENE PRESENCE]: NOT sending anim pack to {0}: avatar not yet in region.", this.Name);
                 return;
             }
 
-//            m_log.WarnFormat("[SCENE PRESENCE]: Sending anim pack to {0}.", this.Name);
+            //            m_log.WarnFormat("[SCENE PRESENCE]: Sending anim pack to {0}.", this.Name);
             m_scene.Broadcast(
-                delegate(IClientAPI client) { client.SendAnimations(animations, seqs, m_controllingClient.AgentId, objectIDs); });
+                delegate (IClientAPI client) { client.SendAnimations(animations, seqs, m_controllingClient.AgentId, objectIDs); });
         }
 
         public void SendAnimPackToClient(IClientAPI client)
@@ -3646,7 +3647,7 @@ namespace OpenSim.Region.Framework.Scenes
             client.SendAnimations(animIDs, sequenceNums, m_controllingClient.AgentId, objectIDs);
         }
 
-        
+
 
         /// <summary>
         /// Send animation information about this avatar to all clients.
@@ -3654,7 +3655,7 @@ namespace OpenSim.Region.Framework.Scenes
         public void SendAnimPack()
         {
             //m_log.Debug("[SCENE PRESENCE]: Sending animation pack to all");
-            
+
             if (m_isChildAgent)
                 return;
 
@@ -3668,9 +3669,9 @@ namespace OpenSim.Region.Framework.Scenes
         }
 
 
-#endregion
+        #endregion
 
-#region Significant Movement Method
+        #region Significant Movement Method
 
         /// <summary>
         /// This checks for a significant movement and sends a courselocationchange update
@@ -3753,8 +3754,8 @@ namespace OpenSim.Region.Framework.Scenes
             }
         }
 
-#endregion
-#region Border Crossing Methods
+        #endregion
+        #region Border Crossing Methods
 
         /// <summary>
         /// Checks to see if the avatar is in range of a border and calls CrossToNewRegion
@@ -3898,7 +3899,7 @@ namespace OpenSim.Region.Framework.Scenes
 
                 fix[0] = (float)(int)(m_regionInfo.RegionLocX - neighbourx);
                 fix[1] = (float)(int)(m_regionInfo.RegionLocY - neighboury);
-                
+
                 return dir * (-1);
             }
             else
@@ -3932,7 +3933,7 @@ namespace OpenSim.Region.Framework.Scenes
 
             m_scene.CrossWalkingOrFlyingAgentToNewRegion(this, neighborHandle, neighborInfo, positionInNewRegion);
 
-            m_log.InfoFormat("[SCENE]: Crossing for avatar took {0} ms for {1}.", Util.GetLongTickCount()-started, this.Name);
+            m_log.InfoFormat("[SCENE]: Crossing for avatar took {0} ms for {1}.", Util.GetLongTickCount() - started, this.Name);
         }
 
         public Task CrossIntoNewRegionWithGroup(SceneObjectGroup sceneObjectGroup, SceneObjectPart part, ulong newRegionHandle)
@@ -3964,7 +3965,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
 
 
-            
+
         }
 
         public void Reset(SimpleRegionInfo destinationRegion)
@@ -4016,7 +4017,7 @@ namespace OpenSim.Region.Framework.Scenes
 #endif
         }
 
-#endregion
+        #endregion
 
         /// <summary>
         /// This allows the Sim owner the abiility to kick users from their sim currently.
@@ -4043,7 +4044,7 @@ namespace OpenSim.Region.Framework.Scenes
             ControllingClient.SendAdminResponse(token, (uint)m_godlevel);
         }
 
-#region Child Agent Updates
+        #region Child Agent Updates
 
         public void ChildAgentDataUpdate(AgentData cAgentData)
         {
@@ -4179,8 +4180,8 @@ namespace OpenSim.Region.Framework.Scenes
                 cAgent.PresenceFlags |= (ulong)PresenceFlags.DebugCrossings;
             if (m_scene.Permissions.IsGod(new UUID(cAgent.AgentID)))
                 cAgent.GodLevel = (byte)m_godlevel;
-            else 
-                cAgent.GodLevel = (byte) 0;
+            else
+                cAgent.GodLevel = (byte)0;
 
             cAgent.Appearance = new AvatarAppearance(m_appearance);
             cAgent.AgentPrefs = new AgentPreferencesData(m_agentPrefs);
@@ -4192,7 +4193,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
             catch { }
 
-            List<RemotePresenceInfo> presInfo 
+            List<RemotePresenceInfo> presInfo
                 = new List<RemotePresenceInfo>(m_remotePresences.GetRemotePresenceList().Select((AvatarRemotePresence pres) => { return pres.PresenceInfo; }));
 
             //add THIS presence since on another sim it will be remote
@@ -4229,7 +4230,7 @@ namespace OpenSim.Region.Framework.Scenes
             m_callbackURI = cAgent.CallbackURI;
             m_callbackTime = Util.GetLongTickCount();
 
-            lock(m_posInfo)
+            lock (m_posInfo)
             {
                 // Now handle position info first, and other quick fields inside the lock
                 if (satOnPart != null)
@@ -4258,7 +4259,7 @@ namespace OpenSim.Region.Framework.Scenes
 
                 m_headrotation = cAgent.HeadRotation;
                 m_bodyRot = cAgent.BodyRotation;
-                m_AgentControlFlags = cAgent.ControlFlags; 
+                m_AgentControlFlags = cAgent.ControlFlags;
                 m_avHeight = cAgent.Size.Z;
 
                 m_CameraCenter = cAgent.Center;
@@ -4291,7 +4292,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_animations.Clear(cAgent.SatOnGroup != UUID.Zero);
                 m_animations.FromArray(cAgent.Anims);
             }
-            catch {  }
+            catch { }
 
             if (cAgent.Groups != null)
             {
@@ -4315,7 +4316,7 @@ namespace OpenSim.Region.Framework.Scenes
             return true;
         }
 
-#endregion Child Agent Updates
+        #endregion Child Agent Updates
 
         /// <summary>
         /// Handles part of the PID controller function for moving an avatar.
@@ -4360,7 +4361,7 @@ namespace OpenSim.Region.Framework.Scenes
         {
             Primitive.TextureEntry textu = AvatarAppearance.GetDefaultTexture();
             DefaultTexture = textu.GetBytes();
-            
+
         }
 
         public override void SetText(string text, Vector3 color, double alpha)
@@ -4378,7 +4379,7 @@ namespace OpenSim.Region.Framework.Scenes
                 DumpDebug("AddToPhysicalScene(existing)", "n/a");
                 RemoveFromPhysicalScene();
             }
-            DumpDebug("AddToPhysicalScene(clean)", "n/a"); 
+            DumpDebug("AddToPhysicalScene(clean)", "n/a");
 
             PhysicsScene scene = m_scene.PhysicsScene;
 
@@ -4478,7 +4479,7 @@ namespace OpenSim.Region.Framework.Scenes
                     {
                         HandleDamage(part);
                     }
-                    
+
                     foreach (SceneObjectGroup group in attList)
                     {
                         if (group.WantsCollisionEvents)
@@ -4486,7 +4487,7 @@ namespace OpenSim.Region.Framework.Scenes
                             group.RootPart.PhysicsCollision(e);
                         }
                     }
-                    
+
                     break;
 
                 case CollisionEventUpdateType.CollisionEnded:
@@ -4539,7 +4540,7 @@ namespace OpenSim.Region.Framework.Scenes
                     //inside the physics thread and some of the actions that need to 
                     //happen for an avatar kill are physics related. This will cause 
                     //the physics thread to wait on itself
-                    Util.FireAndForget(delegate(object o)
+                    Util.FireAndForget(delegate (object o)
                     {
                         ControllingClient.SendHealth(m_health);
 
@@ -4601,12 +4602,12 @@ namespace OpenSim.Region.Framework.Scenes
             {
                 m_attachments.Clear();
             }
-            
+
             RemoveFromPhysicalScene();
 
             if (!IsBot)
-                m_scene.CommsManager.UserService.UnmakeLocalUser(m_uuid); 
-            
+                m_scene.CommsManager.UserService.UnmakeLocalUser(m_uuid);
+
             m_closed = true;
 
             ClearSceneView();
@@ -4688,7 +4689,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         public bool HasAttachments()
         {
-            return m_attachments.Count > 0;   
+            return m_attachments.Count > 0;
         }
 
         public bool HasScriptedAttachments()
@@ -4855,8 +4856,15 @@ namespace OpenSim.Region.Framework.Scenes
 
         CameraData physActor_OnPhysicsRequestingCameraData()
         {
-            return new CameraData { Valid = true, CameraPosition = this.CameraPosition, CameraRotation = this.CameraRotation, MouseLook = this.m_mouseLook,
-                                    HeadRotation = this.m_headrotation, BodyRotation = this.m_bodyRot };
+            return new CameraData
+            {
+                Valid = true,
+                CameraPosition = this.CameraPosition,
+                CameraRotation = this.CameraRotation,
+                MouseLook = this.m_mouseLook,
+                HeadRotation = this.m_headrotation,
+                BodyRotation = this.m_bodyRot
+            };
         }
 
         /// <summary>
@@ -4938,7 +4946,7 @@ namespace OpenSim.Region.Framework.Scenes
                 // SL includes these extra bits if you request FWD/BACK/LEFT/RIGHT
                 oldControls = AdjustControlsForNudges(oldControls);
                 controls = AdjustControlsForNudges(controls);
-                
+
                 if (accept == 0)
                 {
                     if (pass_on == 0)   // a=false, p=false
@@ -5010,14 +5018,17 @@ namespace OpenSim.Region.Framework.Scenes
                         controls = (int)takecontrolls.eventControls;
                         accept = true;
                         pass_on = true;
-                    } else
+                    }
+                    else
                     if (takecontrolls.eventControls == ScriptControlled.CONTROL_ZERO)
                     {
                         // the only one with zero eventControls is a=false,p=false case
                         controls = (int)takecontrolls.ignoreControls;
                         accept = false;
                         pass_on = false;
-                    } else {
+                    }
+                    else
+                    {
                         // that only leaves a=true,p=false case
                         controls = (int)takecontrolls.eventControls;    // also in ignoreControls
                         accept = true;
@@ -5271,13 +5282,13 @@ namespace OpenSim.Region.Framework.Scenes
                 flags &= ~((uint)AgentManager.ControlFlags.AGENT_CONTROL_ML_LBUTTON_DOWN);
             if ((Ignored & ScriptControlled.CONTROL_LBUTTON) != 0)
                 flags &= ~((uint)AgentManager.ControlFlags.AGENT_CONTROL_LBUTTON_UP | (uint)AgentManager.ControlFlags.AGENT_CONTROL_LBUTTON_DOWN);
-                //DIR_CONTROL_FLAG_FORWARD = AgentManager.ControlFlags.AGENT_CONTROL_AT_POS,
-                //DIR_CONTROL_FLAG_BACK = AgentManager.ControlFlags.AGENT_CONTROL_AT_NEG,
-                //DIR_CONTROL_FLAG_LEFT = AgentManager.ControlFlags.AGENT_CONTROL_LEFT_POS,
-                //DIR_CONTROL_FLAG_RIGHT = AgentManager.ControlFlags.AGENT_CONTROL_LEFT_NEG,
-                //DIR_CONTROL_FLAG_UP = AgentManager.ControlFlags.AGENT_CONTROL_UP_POS,
-                //DIR_CONTROL_FLAG_DOWN = AgentManager.ControlFlags.AGENT_CONTROL_UP_NEG,
-                //DIR_CONTROL_FLAG_DOWN_NUDGE = AgentManager.ControlFlags.AGENT_CONTROL_NUDGE_UP_NEG
+            //DIR_CONTROL_FLAG_FORWARD = AgentManager.ControlFlags.AGENT_CONTROL_AT_POS,
+            //DIR_CONTROL_FLAG_BACK = AgentManager.ControlFlags.AGENT_CONTROL_AT_NEG,
+            //DIR_CONTROL_FLAG_LEFT = AgentManager.ControlFlags.AGENT_CONTROL_LEFT_POS,
+            //DIR_CONTROL_FLAG_RIGHT = AgentManager.ControlFlags.AGENT_CONTROL_LEFT_NEG,
+            //DIR_CONTROL_FLAG_UP = AgentManager.ControlFlags.AGENT_CONTROL_UP_POS,
+            //DIR_CONTROL_FLAG_DOWN = AgentManager.ControlFlags.AGENT_CONTROL_UP_NEG,
+            //DIR_CONTROL_FLAG_DOWN_NUDGE = AgentManager.ControlFlags.AGENT_CONTROL_NUDGE_UP_NEG
             return flags;
         }
 
@@ -5295,7 +5306,7 @@ namespace OpenSim.Region.Framework.Scenes
         static private Dictionary<UUID, ulong> s_needsInitialRez = new Dictionary<UUID, ulong>();
         private List<byte[]> m_serializedAttachmentData;
         private AgentLocomotionFlags m_locomotionFlags;
-        
+
         static public void SetNeedsInitialAttachmentRez(UUID userId)
         {
             lock (s_needsInitialRez)
