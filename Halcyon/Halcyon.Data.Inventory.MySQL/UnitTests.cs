@@ -33,8 +33,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
-using OpenSim.Framework;
 using OpenMetaverse;
+using OpenSim.Framework;
 
 namespace Halcyon.Data.Inventory.MySQL
 {
@@ -139,7 +139,6 @@ namespace Halcyon.Data.Inventory.MySQL
             Assert.AreEqual(3, skel[0].Version);
             Assert.AreEqual(newParent, folderCopy.ParentID);
             AssertFolderEqual(folderCopy, skel[0], true);
-
         }
 
         private void AssertFolderEqual(InventoryFolderBase f1, InventoryFolderBase f2, bool checkParent)
@@ -456,9 +455,7 @@ namespace Halcyon.Data.Inventory.MySQL
             _storage.CreateItem(item);
 
             InventoryItemBase itemCopy = _storage.GetItem(itemId, UUID.Zero);
-            AssertItemEqual(itemCopy, item);
-
-            
+            AssertItemEqual(itemCopy, item);            
         }
 
         [Test]
@@ -486,7 +483,6 @@ namespace Halcyon.Data.Inventory.MySQL
             folder2.Type = (short)OpenMetaverse.FolderType.Root;
 
             _storage.CreateFolder(folder2);
-
 
             UUID assetId = UUID.Random();
             UUID itemId = UUID.Random();
@@ -516,21 +512,6 @@ namespace Halcyon.Data.Inventory.MySQL
 
             _storage.CreateItem(item);
 
-            ///
-            /// NOTE: The race mentioned here should be fixed. I replaced the UnixTimeSinceEpochInMicroseconds
-            /// Implementation to fix it. I am leaving the comments here as historical information.
-            /// The sleep is no longer needed
-            ///
-            //I'm seeing a race here, that could be explained by
-            //the timestamps in the ItemParents CF being the same between
-            //the create and the move call. The index is left in a state
-            //still pointing at the old folder
-
-            //we sleep to mitigate this problem since we should never see a create
-            //and a move executed in the same tick in a real inventory situation
-            //this highlights the need for all clocks on the network to be synchronized
-            //System.Threading.Thread.Sleep(30);
-
             _storage.MoveItem(item, folder2);
 
             InventoryItemBase itemCopy = _storage.GetItem(itemId, UUID.Zero);
@@ -543,12 +524,10 @@ namespace Halcyon.Data.Inventory.MySQL
             Assert.AreEqual(2, containingFolder.Version);
             Assert.AreEqual(1, containingFolder.Items.Count);
             AssertItemEqual(item, containingFolder.Items[0]);
-            
 
             InventoryFolderBase oldFolder = _storage.GetFolder(folder1.ID);
             Assert.AreEqual(0, oldFolder.Items.Count);
             Assert.AreEqual(3, oldFolder.Version);
-
         }
 
         [Test]
@@ -568,6 +547,7 @@ namespace Halcyon.Data.Inventory.MySQL
 
             Amib.Threading.SmartThreadPool pool = new Amib.Threading.SmartThreadPool(1000, 20);
             pool.Start();
+
             for (int i = 0; i < 1000; i++)
             {
                 pool.QueueWorkItem(() =>
@@ -673,6 +653,7 @@ namespace Halcyon.Data.Inventory.MySQL
                     SalePrice = 100,
                     SaleType = 1
                 };
+
                 pool.QueueWorkItem(() =>
                 {
                     _storage.CreateItem(item);
@@ -682,6 +663,7 @@ namespace Halcyon.Data.Inventory.MySQL
                 {
                     _storage.PurgeItem(item);
                 });
+
                 pool.QueueWorkItem(() =>
                 {
                     _storage.CreateItem(item);
@@ -695,7 +677,8 @@ namespace Halcyon.Data.Inventory.MySQL
                 pool.WaitForIdle();
 
                 InventoryFolderBase newFolder = _storage.GetFolder(folder1.ID);
-                //either the item should completely exist or not
+
+                // either the item should completely exist or not
                 if (newFolder.Items.Exists((InventoryItemBase litem) => { return litem.ID == itemId; }))
                 {
                     Assert.DoesNotThrow(delegate()
@@ -703,7 +686,7 @@ namespace Halcyon.Data.Inventory.MySQL
                         InventoryItemBase itemCopy = _storage.GetItem(itemId, UUID.Zero);
                     });
 
-                    //cleanup
+                    // cleanup
                     _storage.PurgeItem(item);
                 }
                 else
@@ -736,7 +719,6 @@ namespace Halcyon.Data.Inventory.MySQL
             folder1.Type = (short)OpenMetaverse.FolderType.Root;
 
             _storage.CreateFolder(folder1);
-
 
             InventoryFolderBase folder2 = new InventoryFolderBase();
             folder2.ID = UUID.Random();
@@ -778,7 +760,6 @@ namespace Halcyon.Data.Inventory.MySQL
             _storage.CreateItem(item);
             _storage.MoveItem(item, folder2);
 
-
             InventoryFolderBase newFolder1 = _storage.GetFolder(folder1.ID);
             InventoryFolderBase newFolder2 = _storage.GetFolder(folder2.ID);
 
@@ -792,7 +773,6 @@ namespace Halcyon.Data.Inventory.MySQL
             item.Folder = newFolder2.ID;
 
             AssertItemEqual(item, newItem);
-
         }
 
         [TestCase]
@@ -850,8 +830,6 @@ namespace Halcyon.Data.Inventory.MySQL
             Assert.AreEqual(trashedItem.Folder, trashFolder.ID);
 
             AssertItemEqual(item, trashedItem);
-
-
         }
 
         [TestCase]
@@ -879,7 +857,7 @@ namespace Halcyon.Data.Inventory.MySQL
 
             _storage.CreateFolder(trashFolder);
 
-            //generate 50 folders with 500 items in them
+            // generate 50 folders with 500 items in them
             List<InventoryFolderBase> folders = new List<InventoryFolderBase>();
             List<InventoryItemBase> items = new List<InventoryItemBase>();
             Random r = new Random();
@@ -894,6 +872,7 @@ namespace Halcyon.Data.Inventory.MySQL
                 folder.Type = (short)OpenMetaverse.FolderType.Trash;
 
                 int index = r.Next(-1, folders.Count - 1);
+
                 if (index == -1)
                 {
                     folder.ParentID = trashFolder.ID;
@@ -955,30 +934,30 @@ namespace Halcyon.Data.Inventory.MySQL
                 _storage.CreateItem(item);
             }
 
-            //verify the trash folder is now full of stuff
+            // verify the trash folder is now full of stuff
             InventoryFolderBase fullTrash = _storage.GetFolder(trashFolder.ID);
 
             Assert.That(fullTrash.SubFolders.Count > 0);
 
-            //make sure all folders are accounted for
+            // make sure all folders are accounted for
             List<InventoryFolderBase> skel = _storage.GetInventorySkeleton(userId);
             Assert.AreEqual(52, skel.Count);
 
-            //do some raw queries to verify we have good indexing happening
+            // do some raw queries to verify we have good indexing happening
             foreach (InventoryItemBase item in items)
             {
                 Guid parent = _storage.FindItemParentFolderId(item.ID);
                 Assert.AreEqual(parent, item.Folder.Guid);
             }
 
-            //purge the trash
+            // purge the trash
             _storage.PurgeFolderContents(trashFolder);
 
-            //verify the index is empty except for the trash and the root
+            // verify the index is empty except for the trash and the root
             skel = _storage.GetInventorySkeleton(userId);
             Assert.AreEqual(2, skel.Count);
 
-            //verify none of the items are accessable anymore
+            // verify none of the items are accessable anymore
             foreach (InventoryItemBase item in items)
             {
                 Assert.Throws<InventoryObjectMissingException>(delegate()
@@ -992,7 +971,7 @@ namespace Halcyon.Data.Inventory.MySQL
                 });
             }
 
-            //verify the root folder doesn't show any items or subfolders
+            // verify the root folder doesn't show any items or subfolders
             InventoryFolderBase emptyTrash = _storage.GetFolder(trashFolder.ID);
 
             Assert.AreEqual(0, emptyTrash.Items.Count);
@@ -1016,6 +995,7 @@ namespace Halcyon.Data.Inventory.MySQL
             UUID userId = UUID.Random();
 
             List<InventoryFolderBase> folders = new List<InventoryFolderBase>(FOLDER_COUNT);
+
             for (int i = 0; i < FOLDER_COUNT; i++)
             {
                 InventoryFolderBase folder = new InventoryFolderBase();
@@ -1030,7 +1010,7 @@ namespace Halcyon.Data.Inventory.MySQL
 
                 folders.Add(folder);
 
-                //add an item to the folder so that its version is 2
+                // add an item to the folder so that its version is 2
                 InventoryItemBase item = new InventoryItemBase
                 {
                     AssetID = UUID.Random(),
@@ -1062,6 +1042,7 @@ namespace Halcyon.Data.Inventory.MySQL
             Assert.AreEqual(FOLDER_COUNT, skel.Count);
 
             Dictionary<UUID, InventoryFolderBase> indexOfFolders = new Dictionary<UUID, InventoryFolderBase>();
+
             foreach (InventoryFolderBase folder in skel)
             {
                 indexOfFolders.Add(folder.ID, folder);
@@ -1100,8 +1081,6 @@ namespace Halcyon.Data.Inventory.MySQL
             _storage.CreateFolder(parentFolder);
             _storage.CreateFolder(folder);
 
-            //System.Threading.Thread.Sleep(30);
-
             _storage.PurgeFolder(folder);
 
             List<InventoryFolderBase> skel = _storage.GetInventorySkeleton(userId);
@@ -1124,6 +1103,7 @@ namespace Halcyon.Data.Inventory.MySQL
             UUID userId = UUID.Random();
 
             List<InventoryFolderBase> folders = new List<InventoryFolderBase>(FOLDER_COUNT);
+
             for (int i = 0; i < FOLDER_COUNT; i++)
             {
                 InventoryFolderBase folder = new InventoryFolderBase();
@@ -1205,7 +1185,7 @@ namespace Halcyon.Data.Inventory.MySQL
 
             _storage.ActivateGestures(userId, (from item in gestures select item.ID));
 
-            //make sure all the gestures show active
+            // make sure all the gestures show active
             List<InventoryItemBase> items = _storage.GetActiveGestureItems(userId);
             Assert.AreEqual(NUM_GESTURES, items.Count);
 
@@ -1317,12 +1297,10 @@ namespace Halcyon.Data.Inventory.MySQL
 
             _storage.UpdateParentWithNewChild(invalidChild, folder.ID.Guid, Guid.Empty, Util.UnixTimeSinceEpochInMicroseconds());
 
-            
-
-            //reread the folder
+            // reread the folder
             folder = _storage.GetFolder(folder.ID);
 
-            //ensure that the dud link exists
+            // ensure that the dud link exists
             Assert.That(folder.SubFolders.Count == 2);
 
             foreach (var subfolder in folder.SubFolders)
@@ -1330,10 +1308,10 @@ namespace Halcyon.Data.Inventory.MySQL
                 Assert.IsTrue(subfolder.ID == invalidChild.ID || subfolder.ID == validChild.ID);
             }
 
-            //Run a repair
+            // Run a repair
             _storage.Maint_RepairSubfolderIndexes(userId);
 
-            //verify we got rid of the dud link, but everything else is in tact
+            // verify we got rid of the dud link, but everything else is in tact
             folder = _storage.GetFolder(folder.ID);
 
             Assert.That(folder.SubFolders.Count == 1);

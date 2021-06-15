@@ -27,12 +27,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
 using log4net;
 using OpenMetaverse;
-using OpenSim.Framework;
 using OpenSim.Data.SimpleDB;
-using System.Data;
+using OpenSim.Framework;
 
 namespace Halcyon.Data.Inventory.MySQL
 {
@@ -41,8 +41,7 @@ namespace Halcyon.Data.Inventory.MySQL
     /// </summary>
     public class MysqlStorageImpl
     {
-        private static readonly ILog m_log
-            = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         ConnectionFactory _connFactory;
 
@@ -57,8 +56,11 @@ namespace Halcyon.Data.Inventory.MySQL
         public InventoryFolderBase findUserFolderForType(UUID owner, int typeId)
         {
             InventoryFolderBase rootFolder = getUserRootFolder(owner);
+
             if (typeId == 8)    // by convention, this means root folder
+            {
                 return rootFolder;
+            }
 
             string query = "SELECT * FROM inventoryfolders WHERE agentID = ?agentId AND type = ?type and parentFolderId = ?parent;";
 
@@ -82,7 +84,6 @@ namespace Halcyon.Data.Inventory.MySQL
                         }
                         else
                         {
-                            // m_log.WarnFormat("[Inventory]: findUserFolderForType folder for type {0} not found.", typeId);
                             return null;
                         }
                     }
@@ -136,7 +137,9 @@ namespace Halcyon.Data.Inventory.MySQL
         }
 
         /// <summary>
-        /// Works its way up the parentage and returns the most top-level folder for the given folder, or null if one could not be found.
+        /// Works its way up the parentage and 
+        /// returns the most top-level folder for
+        /// the given folder, or null if one could not be found.
         /// </summary>
         /// <param name="userId"></param>
         /// <param name="type"></param>
@@ -144,22 +147,33 @@ namespace Halcyon.Data.Inventory.MySQL
         public InventoryFolderBase findUserTopLevelFolderFor(UUID owner, UUID folderID)
         {
             InventoryFolderBase rootFolder = getUserRootFolder(owner);
+
             if (folderID == rootFolder.ID)
+            {
                 return rootFolder;
+            }
 
             InventoryFolderBase folder = findFolder(owner, folderID);
-            while (folder != null) {
+            
+            while (folder != null) 
+            {
                 InventoryFolderBase parentFolder = findFolder(owner, folder.ParentID);
-                if (parentFolder == null) return null;
+
+                if (parentFolder == null)
+                {
+                    return null;
+                }
 
                 if (parentFolder.ID == rootFolder.ID)
                 {
                     folder.Level = InventoryFolderBase.FolderLevel.TopLevel;
                     return folder;
                 }
+
                 // walk up the parentage chain
                 folder = findFolder(owner, folder.ParentID);
             }
+
             return null;    // top-level folder not found
         }
 
@@ -171,14 +185,24 @@ namespace Halcyon.Data.Inventory.MySQL
         public List<InventoryItemBase> getItemsInFolders(IEnumerable<InventoryFolderBase> folders)
         {
             string inList = String.Empty;
+
             foreach (InventoryFolderBase folder in folders)
             {
-                if (!String.IsNullOrEmpty(inList)) inList += ",";
+                if (!String.IsNullOrEmpty(inList))
+                {
+                    inList += ",";
+                }
+
                 inList += "'" + folder.ID.ToString() + "'";
             }
-            if (String.IsNullOrEmpty(inList)) return new List<InventoryItemBase>();
+
+            if (String.IsNullOrEmpty(inList))
+            {
+                return new List<InventoryItemBase>();
+            }
 
             string query = "SELECT * FROM inventoryitems WHERE parentFolderID IN (" + inList + ");";
+
             try
             {
                 using (ISimpleDB conn = _connFactory.GetConnection())
@@ -186,15 +210,18 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader reader = conn.QueryAndUseReader(query))
                     {
                         List<InventoryItemBase> items = new List<InventoryItemBase>();
+
                         while (reader.Read())
                         {
                             // A null item (because something went wrong) breaks everything in the folder
                             InventoryItemBase item = readInventoryItem(reader);
+
                             if (item != null)
                             {
                                 items.Add(item);
                             }
                         }
+
                         return items;
                     }
                 }
@@ -217,24 +244,26 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 using (ISimpleDB conn = _connFactory.GetConnection())
                 {
-
                     string query = "SELECT * FROM inventoryitems WHERE parentFolderID = ?uuid";
                     Dictionary<string, object> parms = new Dictionary<string, object>();
                     parms.Add("?uuid", folderID.ToString());
 
                     List<InventoryItemBase> items = new List<InventoryItemBase>();
+
                     using (IDataReader reader = conn.QueryAndUseReader(query, parms))
                     {
                         while (reader.Read())
                         {
                             // A null item (because something went wrong) breaks everything in the folder
                             InventoryItemBase item = readInventoryItem(reader);
+
                             if (item != null)
                             {
                                 items.Add(item);
                             }
                         }
                     }
+
                     return items;
                 }
             }
@@ -256,7 +285,6 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 using (ISimpleDB conn = _connFactory.GetConnection())
                 {
-
                     string query = "SELECT * FROM inventoryfolders WHERE parentFolderID = ?root AND agentID = ?uuid";
                     Dictionary<string, object> parms = new Dictionary<string, object>();
                     parms.Add("?uuid", user.ToString());
@@ -265,8 +293,11 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader reader = conn.QueryAndUseReader(query, parms))
                     {
                         List<InventoryFolderBase> items = new List<InventoryFolderBase>();
+
                         while (reader.Read())
+                        {
                             items.Add(readInventoryFolder(reader));
+                        }
 
                         return items;
                     }
@@ -279,7 +310,6 @@ namespace Halcyon.Data.Inventory.MySQL
             }
         }
 
-
         /// <summary>
         /// see <see cref="InventoryItemBase.getUserRootFolder"/>
         /// </summary>
@@ -291,7 +321,6 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 using (ISimpleDB conn = _connFactory.GetConnection())
                 {
-
                     string query = "SELECT * FROM inventoryfolders WHERE parentFolderID = ?zero AND agentID = ?uuid";
                     Dictionary<string, object> parms = new Dictionary<string, object>();
                     parms.Add("?uuid", user.ToString());
@@ -300,8 +329,11 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader reader = conn.QueryAndUseReader(query, parms))
                     {
                         List<InventoryFolderBase> items = new List<InventoryFolderBase>();
+
                         while (reader.Read())
+                        {
                             items.Add(readInventoryFolder(reader));
+                        }
 
                         InventoryFolderBase rootFolder = null;
 
@@ -314,6 +346,7 @@ namespace Halcyon.Data.Inventory.MySQL
                         {
                             rootFolder = items[0];
                         }
+
                         rootFolder.Level = InventoryFolderBase.FolderLevel.Root;
                         return rootFolder;
                     }
@@ -346,11 +379,13 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader reader = conn.QueryAndUseReader(query, parms))
                     {
                         List<InventoryFolderBase> items = new List<InventoryFolderBase>();
+
                         while (reader.Read())
                         {
                             InventoryFolderBase folder = readInventoryFolder(reader);
                             items.Add(folder);
                         }
+
                         return items;
                     }
                 }
@@ -434,7 +469,6 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 using (ISimpleDB conn = _connFactory.GetConnection())
                 {
-
                     string query = "SELECT * FROM inventoryitems WHERE inventoryID = ?uuid";
                     Dictionary<string, object> parms = new Dictionary<string, object>();
                     parms.Add("?uuid", itemID.ToString());
@@ -442,8 +476,11 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader reader = conn.QueryAndUseReader(query, parms))
                     {
                         InventoryItemBase item = null;
+
                         if (reader.Read())
+                        {
                             item = readInventoryItem(reader);
+                        }
 
                         return item;
                     }
@@ -479,6 +516,7 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 m_log.Error(e.ToString());
             }
+
             return null;
         }
 
@@ -493,7 +531,6 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 using (ISimpleDB conn = _connFactory.GetConnection())
                 {
-
                     string query = "SELECT * FROM inventoryfolders WHERE folderID = ?uuid";
                     Dictionary<string, object> parms = new Dictionary<string, object>();
                     parms.Add("?uuid", folderID.ToString());
@@ -581,15 +618,6 @@ namespace Halcyon.Data.Inventory.MySQL
         /// <param name="item">Inventory item to update</param>
         public void updateInventoryItem(InventoryItemBase item)
         {
-
-            //addInventoryItem(item);
-
-            /* 12/9/2009 - Ele's Edit - Rather than simply adding a whole new item, which seems kind of pointless to me, 
-             let's actually try UPDATING the item as it should be. This is not fully functioning yet from the updating of items
-             * within Scene.Inventory.cs MoveInventoryItem yet. Not sure the effect it will have on the rest of the updates either, as they
-             * originally pointed back to addInventoryItem above.
-            */
-
             string query =
                 "UPDATE inventoryitems SET assetID=?assetID, assetType=?assetType, parentFolderID=?parentFolderID, "
                  + "avatarID=?avatarID, inventoryName=?inventoryName, inventoryDescription=?inventoryDescription, inventoryNextPermissions=?inventoryNextPermissions, "
@@ -713,7 +741,9 @@ namespace Halcyon.Data.Inventory.MySQL
         }
 
         /// <summary>
-        /// Increments the version of the passed folder, making sure the folder isn't Zero. Must be called from within a using{} block!
+        /// Increments the version of the passed folder, 
+        /// making sure the folder isn't Zero. Must be called
+        /// from within a using{} block!
         /// </summary>
         /// <param name="conn">Database connection.</param>
         /// <param name="folderId">Folder UUID to increment</param>
@@ -756,7 +786,6 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 m_log.Error(e.ToString());
             }
-
         }
 
         /// <summary>
@@ -789,7 +818,6 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 m_log.Error(e.ToString());
             }
-
         }
 
         /// <summary>
@@ -802,9 +830,10 @@ namespace Halcyon.Data.Inventory.MySQL
             List<InventoryFolderBase> subfolderList = getInventoryFolders(parentID);
 
             foreach (InventoryFolderBase f in subfolderList)
+            {
                 folders.Add(f);
+            }
         }
-
 
         /// <summary>
         /// See IInventoryDataPlugin
@@ -813,22 +842,23 @@ namespace Halcyon.Data.Inventory.MySQL
         /// <returns></returns>
         public List<InventoryFolderBase> getFolderHierarchy(UUID parentID)
         {
-            /* Note: There are subtle changes between this implementation of getFolderHierarchy and the previous one
-                 * - We will only need to hit the database twice instead of n times.
-                 * - We assume the database is well-formed - no stranded/dangling folders, all folders in heirarchy owned
-                 *   by the same person, each user only has 1 inventory heirarchy
-                 * - The returned list is not ordered, instead of breadth-first ordered
-               There are basically 2 usage cases for getFolderHeirarchy:
-                 1) Getting the user's entire inventory heirarchy when they log in
-                 2) Finding a subfolder heirarchy to delete when emptying the trash.
-               This implementation will pull all inventory folders from the database, and then prune away any folder that
-               is not part of the requested sub-heirarchy. The theory is that it is cheaper to make 1 request from the
-               database than to make n requests. This pays off only if requested heirarchy is large.
-               By making this choice, we are making the worst case better at the cost of making the best case worse.
-               This way is generally better because we don't have to rebuild the connection/sql query per subfolder,
-               even if we end up getting more data from the SQL server than we need.
-                 - Francis
-             */
+            /// <summary>
+            /// Note: There are subtle changes between this implementation of getFolderHierarchy and the previous one
+            ///     * - We will only need to hit the database twice instead of n times.
+            ///     * - We assume the database is well-formed - no stranded/dangling folders, all folders in heirarchy owned
+            ///     *   by the same person, each user only has 1 inventory heirarchy
+            ///     * - The returned list is not ordered, instead of breadth-first ordered
+            ///   There are basically 2 usage cases for getFolderHeirarchy:
+            ///     1) Getting the user's entire inventory heirarchy when they log in
+            ///     2) Finding a subfolder heirarchy to delete when emptying the trash.
+            ///   This implementation will pull all inventory folders from the database, and then prune away any folder that
+            ///   is not part of the requested sub-heirarchy. The theory is that it is cheaper to make 1 request from the
+            ///   database than to make n requests. This pays off only if requested heirarchy is large.
+            ///   By making this choice, we are making the worst case better at the cost of making the best case worse.
+            ///   This way is generally better because we don't have to rebuild the connection/sql query per subfolder,
+            ///   even if we end up getting more data from the SQL server than we need.
+            ///     - Francis
+            /// </summary>
             try
             {
                 List<InventoryFolderBase> folders = new List<InventoryFolderBase>();
@@ -840,14 +870,16 @@ namespace Halcyon.Data.Inventory.MySQL
                 {
                     bool buildResultsFromHashTable = false;
 
-                    /* Fetch the parent folder from the database to determine the agent ID, and if
-                     * we're querying the root of the inventory folder tree */
-
+                    /// <summary>
+                    /// Fetch the parent folder from the database to determine the agent ID,
+                    /// and if we are querying the root of the inventory folder tree
+                    /// </summary>
                     string query = "SELECT * FROM inventoryfolders WHERE folderID = ?uuid";
                     Dictionary<string, object> parms = new Dictionary<string, object>();
                     parms.Add("?uuid", parentID.ToString());
 
                     IDataReader reader;
+
                     using (reader = conn.QueryAndUseReader(query, parms))
                     {
                         while (reader.Read())          // Should be at most 1 result
@@ -858,7 +890,7 @@ namespace Halcyon.Data.Inventory.MySQL
                     {
                         if (parentFolder[0].ParentID == UUID.Zero) // We are querying the root folder
                         {
-                            /* Get all of the agent's folders from the database, put them in a list and return it */
+                            // Get all of the agent's folders from the database, put them in a list and return it
                             parms.Clear();
                             query = "SELECT * FROM inventoryfolders WHERE agentID = ?uuid";
                             parms.Add("?uuid", parentFolder[0].Owner.ToString());
@@ -868,15 +900,21 @@ namespace Halcyon.Data.Inventory.MySQL
                                 while (reader.Read())
                                 {
                                     InventoryFolderBase curFolder = readInventoryFolder(reader);
+
                                     if (curFolder.ID != parentID) // Do not need to add the root node of the tree to the list
+                                    {
                                         folders.Add(curFolder);
+                                    }
                                 }
                             }
-                        } // if we are querying the root folder
+                        }
                         else // else we are querying a subtree of the inventory folder tree
                         {
-                            /* Get all of the agent's folders from the database, put them all in a hash table
-                             * indexed by their parent ID */
+                            /// <summary>
+                            /// Get all of the agent's folders from the 
+                            /// database and put them all in a hash table
+                            /// indexed by their parent ID
+                            /// </summary>
                             parms.Clear();
                             query = "SELECT * FROM inventoryfolders WHERE agentID = ?uuid";
                             parms.Add("?uuid", parentFolder[0].Owner.ToString());
@@ -886,37 +924,53 @@ namespace Halcyon.Data.Inventory.MySQL
                                 while (reader.Read())
                                 {
                                     InventoryFolderBase curFolder = readInventoryFolder(reader);
+
                                     if (hashtable.ContainsKey(curFolder.ParentID))      // Current folder already has a sibling
+                                    {
                                         hashtable[curFolder.ParentID].Add(curFolder);   // append to sibling list
+                                    }
                                     else // else current folder has no known (yet) siblings
                                     {
                                         List<InventoryFolderBase> siblingList = new List<InventoryFolderBase>();
                                         siblingList.Add(curFolder);
+
                                         // Current folder has no known (yet) siblings
                                         hashtable.Add(curFolder.ParentID, siblingList);
                                     }
-                                } // while more items to read from the database
+                                }
                             }
 
                             // Set flag so we know we need to build the results from the hash table after
                             // we unlock the database
                             buildResultsFromHashTable = true;
 
-                        } // else we are querying a subtree of the inventory folder tree
-                    } // if folder parentID exists
+                        }
+                    }
 
                     if (buildResultsFromHashTable)
                     {
-                        /* We have all of the user's folders stored in a hash table indexed by their parent ID
-                         * and we need to return the requested subtree. We will build the requested subtree
-                         * by performing a breadth-first-search on the hash table */
+                        /// <summary>
+                        /// We have all of the user's folders stored in
+                        /// a hash table indexed by their parent ID and
+                        /// we need to return the reqeusted subtree.  We
+                        /// will build the requested subtree by performing
+                        /// a breadth-first-search on the hash table
+                        /// </summary>
                         if (hashtable.ContainsKey(parentID))
+                        {
                             folders.AddRange(hashtable[parentID]);
+                        }
+
                         for (int i = 0; i < folders.Count; i++) // **Note: folders.Count is *not* static
+                        {
                             if (hashtable.ContainsKey(folders[i].ID))
+                            {
                                 folders.AddRange(hashtable[folders[i].ID]);
+                            }
+                        }
                     }
-                } // lock (database)
+                }
+
                 return folders;
             }
             catch (Exception e)
@@ -927,9 +981,15 @@ namespace Halcyon.Data.Inventory.MySQL
         }
 
         /// <summary>
-        /// Delete a folder from database. Must be called from within a using{} block for the database connection.
+        /// Delete a folder from database. 
+        /// Must be called from within a using{} 
+        /// block for the database connection.
+        /// 
+        /// Passing in the connection allows for 
+        /// consolidation of the DB connections, 
+        /// important as this method is often called
+        /// from an inner loop.
         /// </summary>
-        /// Passing in the connection allows for consolidation of the DB connections, important as this method is often called from an inner loop.
         /// <param name="folderID">the folder UUID</param>
         /// <param name="conn">the database connection</param>
         private void deleteOneFolder(ISimpleDB conn, InventoryFolderBase folder)
@@ -944,9 +1004,14 @@ namespace Halcyon.Data.Inventory.MySQL
         }
 
         /// <summary>
-        /// Delete all subfolders and items in a folder. Must be called from within a using{} block for the database connection.
+        /// Delete all subfolders and items in a folder. 
+        /// Must be called from within a using{} block 
+        /// for the database connection.
+        /// 
+        /// Passing in the connection allows for consolidation 
+        /// of the DB connections, important as this method is
+        /// often called from an inner loop.
         /// </summary>
-        /// Passing in the connection allows for consolidation of the DB connections, important as this method is often called from an inner loop.
         /// <param name="folderID">the folder UUID</param>
         /// <param name="conn">the database connection</param>
         private void deleteFolderContents(ISimpleDB conn, UUID folderID)
@@ -1055,11 +1120,15 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader result = conn.QueryAndUseReader(query, parms))
                     {
                         List<InventoryItemBase> list = new List<InventoryItemBase>();
+
                         while (result.Read())
                         {
                             InventoryItemBase item = readInventoryItem(result);
+
                             if (item != null)
+                            {
                                 list.Add(item);
+                            }
                         }
 
                         return list;
@@ -1086,11 +1155,15 @@ namespace Halcyon.Data.Inventory.MySQL
                     using (IDataReader result = conn.QueryAndUseReader(query, parms))
                     {
                         List<InventoryItemBase> list = new List<InventoryItemBase>();
+
                         while (result.Read())
                         {
                             InventoryItemBase item = readInventoryItem(result);
+
                             if (item != null)
+                            {
                                 list.Add(item);
+                            }
                         }
 
                         return list;
