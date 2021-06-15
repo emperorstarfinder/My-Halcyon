@@ -81,30 +81,32 @@ namespace OpenSim
             var pidFile = new PIDFileManager(configSource.Configs["Startup"].GetString("pidfile", string.Empty));
 
             pidFile.SetStatus(PIDFileManager.Status.Starting);
+
             // Configure Log4Net
             configSource.AddSwitch("Startup", "logconfig");
             string logConfigFile = configSource.Configs["Startup"].GetString("logconfig", String.Empty);
+
             if (!String.IsNullOrEmpty(logConfigFile))
             {
                 XmlConfigurator.Configure(new System.IO.FileInfo(logConfigFile));
-                m_log.InfoFormat("[HALCYON MAIN]: configured log4net using \"{0}\" as configuration file", 
-                                 logConfigFile);
+                m_log.InfoFormat("[Halcyon]: configured log4net using \"{0}\" as configuration file",  logConfigFile);
             } 
             else
             {
                 XmlConfigurator.Configure();
-                m_log.Info("[HALCYON MAIN]: configured log4net using default Halcyon.exe.config");
+                m_log.Info("[Halcyon]: configured log4net using default Halcyon.exe.config");
             }
 
-            m_log.Info("Performing compatibility checks... ");
+            m_log.Info("[Halcyon]: Performing compatibility checks... ");
             string supported = String.Empty;
+
             if (Util.IsEnvironmentSupported(ref supported))
             {
-                m_log.Info("Environment is compatible.\n");
+                m_log.Info("[Halcyon]: Environment is compatible.\n");
             }
             else
             {
-                m_log.Warn("Environment is unsupported (" + supported + ")\n");
+                m_log.Warn("[Halcyon]: Environment is unsupported (" + supported + ")\n");
             }
 
             // Configure nIni aliases and localles
@@ -153,6 +155,7 @@ namespace OpenSim
                 m_sim.Startup();
 
                 pidFile.SetStatus(PIDFileManager.Status.Running);
+
                 while (true)
                 {
                     try
@@ -162,7 +165,7 @@ namespace OpenSim
                     }
                     catch (Exception e)
                     {
-                        m_log.ErrorFormat("Command error: {0}", e);
+                        m_log.ErrorFormat("[Halcyon]: Command error: {0}", e);
                     }
                 }
             }
@@ -171,7 +174,9 @@ namespace OpenSim
         private static bool _IsHandlingException = false; // Make sure we don't go recursive on ourself
 
         /// <summary>
-        /// Global exception handler -- all unhandlet exceptions end up here :)
+        /// Global exception handler
+        /// 
+        /// all unhandlet exceptions end up here
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -183,6 +188,7 @@ namespace OpenSim
             }
 
             _IsHandlingException = true;
+
             // TODO: Add config option to allow users to turn off error reporting
             // TODO: Post error report (disabled for now)
 
@@ -193,6 +199,7 @@ namespace OpenSim
 
             msg += "Exception: " + e.ExceptionObject.ToString() + "\r\n";
             Exception ex = (Exception) e.ExceptionObject;
+
             if (ex.InnerException != null)
             {
                 msg += "InnerException: " + ex.InnerException.ToString() + "\r\n";
@@ -201,7 +208,7 @@ namespace OpenSim
             msg += "\r\n";
             msg += "Application is terminating: " + e.IsTerminating.ToString() + "\r\n";
 
-            m_log.ErrorFormat("[APPLICATION]: {0}", msg);
+            m_log.ErrorFormat("[Application]: {0}", msg);
 
             if (m_saveCrashDumps)
             {
@@ -212,7 +219,9 @@ namespace OpenSim
                     {
                         Directory.CreateDirectory(m_crashDir);
                     }
+
                     string log = Util.GetUniqueFilename(ex.GetType() + ".txt");
+
                     using (StreamWriter m_crashLog = new StreamWriter(Path.Combine(m_crashDir, log)))
                     {
                         m_crashLog.WriteLine(msg);
@@ -222,7 +231,7 @@ namespace OpenSim
                 }
                 catch (Exception e2)
                 {
-                    m_log.ErrorFormat("[CRASH LOGGER CRASHED]: {0}", e2);
+                    m_log.ErrorFormat("[Crash Logger Crashed]: {0}", e2);
                 }
             }
 
