@@ -42,19 +42,15 @@ namespace Halcyon.Data.Inventory.MySQL
             {
                 return left == right;
             }
-
             return left.SequenceEqual(right);
         }
 
         public int GetHashCode(byte[] key)
         {
             if (key == null)
-            {
                 throw new ArgumentNullException("key");
-            }
 
             int total = 0;
-
             for (int i = 0; i < key.Length; i++)
             {
                 total += key[i];

@@ -34,8 +34,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using log4net;
-using OpenMetaverse;
 using OpenSim.Data;
+using OpenMetaverse;
 using OpenSim.Framework;
 
 namespace Halcyon.Data.Inventory.MySQL
@@ -45,7 +45,8 @@ namespace Halcyon.Data.Inventory.MySQL
     /// </summary>
     public class MySqlInventoryStorage : IInventoryStorage
     {
-        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILog m_log
+            = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private MysqlStorageImpl _impl;
 
@@ -59,7 +60,6 @@ namespace Halcyon.Data.Inventory.MySQL
             List<InventoryFolderBase> retFolders = new List<InventoryFolderBase>();
 
             InventoryFolderBase rootFolder = _impl.getUserRootFolder(userId);
-            
             if (rootFolder != null)
             {
                 retFolders.Add(rootFolder);
@@ -83,7 +83,7 @@ namespace Halcyon.Data.Inventory.MySQL
                 throw new InventoryObjectMissingException(String.Format("Unable to find folder {0}", folderId));
             }
 
-            // now we need the descendents
+            //now we need the descendents
             List<InventoryItemBase> items = _impl.getInventoryInFolder(folderId);
             List<InventoryFolderBase> folders = _impl.getInventoryFolders(folderId);
 
@@ -98,7 +98,6 @@ namespace Halcyon.Data.Inventory.MySQL
                     Owner = subFolder.Owner,
                     Type = subFolder.Type
                 };
-
                 folder.SubFolders.Add(sub);
             }
 
@@ -158,17 +157,16 @@ namespace Halcyon.Data.Inventory.MySQL
             }
             else if (type == (AssetType)FolderType.Root)
             {
-                // this is a special case for the legacy inventory services. 
-                // the root folder type asset type may have been incorrectly saved
-                // as the old AssetType.RootFolder (which is 9),
-                // rather than AssetType.Folder (which is 8) with FolderType.Root (which is also 8).
+                //this is a special case for the legacy inventory services. 
+                //the root folder type asset type may have been incorrectly saved
+                //as the old AssetType.RootFolder (which is 9),
+                //rather than AssetType.Folder (which is 8) with FolderType.Root (which is also 8).
                 folder = _impl.findUserFolderForType(owner, (int)FolderType.OldRoot);
-
                 if (folder == null)
                 {
-                    // this is another special case for the legacy inventory services.
-                    // the root folder type may be incorrectly set to folder instead of RootFolder
-                    // we must find it a different way in this case
+                    //this is another special case for the legacy inventory services.
+                    //the root folder type may be incorrectly set to folder instead of RootFolder
+                    //we must find it a different way in this case
                     return _impl.getUserRootFolder(owner);
                 }
             }
@@ -262,7 +260,6 @@ namespace Halcyon.Data.Inventory.MySQL
             foreach (UUID id in itemIds)
             {
                 InventoryItemBase item = _impl.getInventoryItem(id);
-
                 if (item != null)
                 {
                     item.Flags |= (uint)1;
@@ -276,7 +273,6 @@ namespace Halcyon.Data.Inventory.MySQL
             foreach (UUID id in itemIds)
             {
                 InventoryItemBase item = _impl.getInventoryItem(id);
-
                 if (item != null)
                 {
                     item.Flags &= ~(uint)1;

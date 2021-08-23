@@ -35,20 +35,11 @@
 
 using System.Reflection;
 
-/// <summary>
-/// Version format is Major.Minor.Patch.Revision
-/// Using the "build" number, the 3rd value, as 
-/// patch is a bit non-standard from MS's perspective. 
-/// However this is what https://semver.org/ uses it as.
-/// Using day since 2000 is good for us here as we've 
-/// always historically used the revision field as a unique 
-/// ID value. Originally it was the SVN revision number, 
-/// but since the switch to git that went away.
-///
-/// Do not provide AssemblyFileVersion and it will be
-/// kept in sync.
-/// </summary>
+// Version format is Major.Minor.Patch.Revision
+// Using the "build" number, the 3rd value, as patch is a bit non-standard from MS's perspective. However this is what https://semver.org/ uses it as.
+// Using day since 2000 is good for us here as we've always historically used the revision field as a unique ID value. Originally it was the SVN revision number, but since the switch to git that went away.
 [assembly: AssemblyVersion("0.9.41.<#= (int)DateTimeOffset.UtcNow.Subtract(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero)).TotalDays #>")]
+// Do not provide AssemblyFileVersion and it will be kept in sync.
 
 namespace OpenSim
 {
@@ -57,8 +48,7 @@ namespace OpenSim
     public class VersionInfo
     {
         /// <summary>
-        /// This is name of the software product 
-        /// (separate from the grid it is running on).
+        /// This is name of the software product (separate from the grid it is running on).
         /// This should not be changed.
         /// </summary>
         public readonly static string SoftwareName = "Halcyon";
@@ -77,28 +67,24 @@ namespace OpenSim
                 _version = String.Format("{0}.{1}.{2}", ver.Major, ver.Minor, ver.Build);
                 _revision = ver.Revision.ToString();
             }
-
             return _revision;
         }
 
-        /// <summary>
-        /// This is the external interface version.  
-        /// It is separate from the externally-visible version info.
+        /// <value>
+        /// This is the external interface version.  It is separate from the externally-visible version info.
         /// 
-        /// This version number should be increased by 1 
-        /// every time a code change makes the previous revision incompatible
-        /// with the new revision.  This will usually be
-        /// due to interregion or grid facing interface changes.
+        /// This version number should be increased by 1 every time a code change makes the previous revision incompatible
+        /// with the new revision.  This will usually be due to interregion or grid facing interface changes.
         /// 
-        /// Changes which are compatible with an older revision 
-        /// (e.g. older revisions experience degraded functionality
+        /// Changes which are compatible with an older revision (e.g. older revisions experience degraded functionality
         /// but not outright failure) do not need a version number increment.
         /// 
-        /// Having this version number allows the grid service 
-        /// to reject connections from regions running a version
+        /// Having this version number allows the grid service to reject connections from regions running a version
         /// of the code that is too old. 
-        /// </summary>
+        ///   
+        /// </value>
         public readonly static int MajorInterfaceVersion = 4;
+
 
         public static string Revision
         {
@@ -127,8 +113,7 @@ namespace OpenSim
         /// </summary>
         public static string FullVersion
         {
-            get 
-            {
+            get {
                 _Initialize();
                 return ShortVersion + " R" + Revision;
             }
@@ -140,8 +125,7 @@ namespace OpenSim
         /// Mostly used by the scripting system and therefore is best to follow LL's format which seems to be "Major.Minor.Update.Revision".
         public static string Version
         {
-            get 
-            {
+            get {
                 _Initialize();
                 return _version + "." + Revision;
             }

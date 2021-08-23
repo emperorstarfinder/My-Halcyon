@@ -4,13 +4,13 @@
     "private": true,
     "repository": {
         "type": "git",
-        "url": "https://github.com/HalcyonGrid/halcyon.git"
+        "url": "https://github.com/emperorstarfinder/My-Halcyon.git"
     },
     "license": "BSD-3-Clause",
     "bugs": {
-        "url": "https://github.com/HalcyonGrid/halcyon/issues"
+        "url": "https://github.com/emperorstarfinder/My-Halcyon/issues"
     },
-    "homepage": "https://github.com/HalcyonGrid/halcyon#readme",
+    "homepage": "https://github.com/emperorstarfinder/My-Halcyon#readme",
     "scripts": {
         "build:scripts": "tsc --project .scripts/tsconfig.json",
         "build:workflow-scripts": "tsc --project .github/scripts/tsconfig.json",

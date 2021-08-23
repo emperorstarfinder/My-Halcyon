@@ -32,8 +32,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OpenMetaverse;
 using OpenSim.Data;
+using OpenMetaverse;
 using OpenSim.Framework;
 
 namespace Halcyon.Data.Inventory.MySQL

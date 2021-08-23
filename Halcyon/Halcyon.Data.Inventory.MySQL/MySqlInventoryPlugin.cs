@@ -32,10 +32,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using OpenMetaverse;
-using OpenSim.Data;
-using OpenSim.Framework;
 using OpenSim.Framework.Communications;
+using OpenSim.Framework;
+using OpenSim.Data;
+using OpenMetaverse;
 
 namespace Halcyon.Data.Inventory.MySQL
 {
@@ -50,6 +50,7 @@ namespace Halcyon.Data.Inventory.MySQL
         {
             _storage = new MySqlInventoryStorage(settings.InventorySource);
 
+            // ProviderRegistry.Instance.RegisterInterface<IInventoryStoragePlugin>(this);
             _storageSelector = new InventoryProviderSelector(settings.CoreConnectionString, _storage);
             ProviderRegistry.Instance.RegisterInterface<IInventoryProviderSelector>(_storageSelector);
         }
